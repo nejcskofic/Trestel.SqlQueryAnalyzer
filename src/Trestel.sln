@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trestel.Database", "Trestel.Database\Trestel.Database.csproj", "{9978DDF2-FF3F-4948-A85F-BD4D967FB2D9}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trestel.SqlQueryAnalyzer.Vsix", "Trestel.SqlQueryAnalyzer\Trestel.SqlQueryAnalyzer.Vsix\Trestel.SqlQueryAnalyzer.Vsix.csproj", "{47E3CDFB-A8EC-4026-B319-8628A77F5DE4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trestel.SqlQueryAnalyzer", "Trestel.SqlQueryAnalyzer\Trestel.SqlQueryAnalyzer\Trestel.SqlQueryAnalyzer.csproj", "{9A52DB32-BB3B-4060-BF82-1A9079B81468}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Trestel.SqlQueryAnalyzer.Test", "Trestel.SqlQueryAnalyzer\Trestel.SqlQueryAnalyzer.Test\Trestel.SqlQueryAnalyzer.Test.csproj", "{386B85CE-6312-4088-A1E3-4847BDED4BD6}"
+EndProject
+Project("{FF286327-C783-4F7A-AB73-9BCBAD0D4460}") = "Trestel.SqlQueryAnalyzer.Nuget", "Trestel.SqlQueryAnalyzer\Trestel.SqlQueryAnalyzer.Nuget\Trestel.SqlQueryAnalyzer.Nuget.nuproj", "{D644C6FE-189D-47B6-BCAB-D4A2EDB8D4F6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{EC1BCC85-4B7F-4D8E-884F-60E25316F33A}"
+	ProjectSection(SolutionItems) = preProject
+		AssemblyInfo.cs = AssemblyInfo.cs
+		trestel.pfx = trestel.pfx
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9978DDF2-FF3F-4948-A85F-BD4D967FB2D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9978DDF2-FF3F-4948-A85F-BD4D967FB2D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9978DDF2-FF3F-4948-A85F-BD4D967FB2D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9978DDF2-FF3F-4948-A85F-BD4D967FB2D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47E3CDFB-A8EC-4026-B319-8628A77F5DE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47E3CDFB-A8EC-4026-B319-8628A77F5DE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47E3CDFB-A8EC-4026-B319-8628A77F5DE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47E3CDFB-A8EC-4026-B319-8628A77F5DE4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9A52DB32-BB3B-4060-BF82-1A9079B81468}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9A52DB32-BB3B-4060-BF82-1A9079B81468}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9A52DB32-BB3B-4060-BF82-1A9079B81468}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9A52DB32-BB3B-4060-BF82-1A9079B81468}.Release|Any CPU.Build.0 = Release|Any CPU
+		{386B85CE-6312-4088-A1E3-4847BDED4BD6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{386B85CE-6312-4088-A1E3-4847BDED4BD6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{386B85CE-6312-4088-A1E3-4847BDED4BD6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{386B85CE-6312-4088-A1E3-4847BDED4BD6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D644C6FE-189D-47B6-BCAB-D4A2EDB8D4F6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D644C6FE-189D-47B6-BCAB-D4A2EDB8D4F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D644C6FE-189D-47B6-BCAB-D4A2EDB8D4F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D644C6FE-189D-47B6-BCAB-D4A2EDB8D4F6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,67 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Trestel.SqlQueryAnalyzer.Infrastructure;
+
+namespace TestHelper
+{
+    public class MockupValidationProvider : IQueryValidationProvider
+    {
+        private readonly List<string> _connectionStrings;
+        private readonly Dictionary<string, ValidationResult> _mockedUpResults;
+        private readonly List<string> _accessedQueries;
+
+        public MockupValidationProvider()
+        {
+            _connectionStrings = new List<string>();
+            _mockedUpResults = new Dictionary<string, ValidationResult>();
+            _accessedQueries = new List<string>();
+        }
+
+        public System.Collections.Immutable.ImmutableList<string> AccessedQueries
+        {
+            get
+            {
+                return System.Collections.Immutable.ImmutableList.CreateRange(_accessedQueries);
+            }
+        }
+
+        public System.Collections.Immutable.ImmutableList<string> ConnectionStrings
+        {
+            get
+            {
+                return System.Collections.Immutable.ImmutableList.CreateRange(_connectionStrings);
+            }
+        }
+
+        public MockupValidationProvider WithConnectionString(string connectionString)
+        {
+            _connectionStrings.Add(connectionString);
+            return this;
+        }
+
+        public MockupValidationProvider AddExpectedResult(string rawQuery, ValidationResult result)
+        {
+            if (rawQuery == null) throw new ArgumentNullException(nameof(rawQuery));
+            if (result == null) throw new ArgumentNullException(nameof(result));
+
+            _mockedUpResults[rawQuery] = result;
+            return this;
+        }
+
+        public ValidationResult Validate(string rawSqlQuery)
+        {
+            if (rawSqlQuery == null) throw new ArgumentNullException(nameof(rawSqlQuery));
+            _accessedQueries.Add(rawSqlQuery);
+
+            ValidationResult result = null;
+            if (!_mockedUpResults.TryGetValue(rawSqlQuery, out result))
+            {
+                throw new ArgumentException("There is no configured result for following raw query: " + rawSqlQuery);
+            }
+            return result;
+        }
+    }
+}

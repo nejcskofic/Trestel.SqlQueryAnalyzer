@@ -1,0 +1,49 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|AnyCPU">
+      <Configuration>Debug</Configuration>
+      <Platform>AnyCPU</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|AnyCPU">
+      <Configuration>Release</Configuration>
+      <Platform>AnyCPU</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>d644c6fe-189d-47b6-bcab-d4a2edb8d4f6</ProjectGuid>
+  </PropertyGroup>
+  <PropertyGroup>
+    <NuProjPath Condition=" '$(NuProjPath)' == '' ">$(MSBuildExtensionsPath)\NuProj\</NuProjPath>
+  </PropertyGroup>
+  <Import Project="$(NuProjPath)\NuProj.props" Condition="Exists('$(NuProjPath)\NuProj.props')" />
+  <PropertyGroup Label="Configuration">
+    <Id>Trestel.SqlQueryAnalyzer</Id>
+    <Version>0.0.1</Version>
+    <Title>Trestel.SqlQueryAnalyzer.Nuget</Title>
+    <Authors>Nejc Skofic</Authors>
+    <Owners>Nejc Skofic</Owners>
+    <Summary>Helper library for defining raw SQL queries with accompanying analyzer for correctness.</Summary>
+    <Description>Adds simple library which contains Sql class which is used to wrap raw SQL queries. With DatabaseHint attribute you define connection string to development database, and analyzer will check for correctness all such queries (syntax and object usage).</Description>
+    <ReleaseNotes>
+    </ReleaseNotes>
+    <ProjectUrl>
+    </ProjectUrl>
+    <LicenseUrl>
+    </LicenseUrl>
+    <Copyright>Copyright © 2017 Nejc Skofic</Copyright>
+    <Tags>SQL, query, analyzer, correctness, syntax, compile-time</Tags>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Trestel.Database\Trestel.Database.csproj" />
+    <ProjectReference Include="..\Trestel.SqlQueryAnalyzer\Trestel.SqlQueryAnalyzer.csproj">
+      <PackageDirectory>Analyzers</PackageDirectory>
+      <TargetSubdirectory>cs</TargetSubdirectory>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="tools\install.ps1" />
+    <Content Include="tools\uninstall.ps1" />
+  </ItemGroup>
+  <Import Project="$(NuProjPath)\NuProj.targets" />
+</Project>
