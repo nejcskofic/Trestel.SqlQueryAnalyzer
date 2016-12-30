@@ -1,10 +1,13 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CodeActions;
-using Microsoft.CodeAnalysis.Formatting;
-using Microsoft.CodeAnalysis.Simplification;
+﻿// Copyright (c) Nejc Skofic. All rights reserved.
+// Licensed under the MIT license. See LICENSE.txt file in the project root for full license information.
+
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CodeActions;
+using Microsoft.CodeAnalysis.Formatting;
+using Microsoft.CodeAnalysis.Simplification;
 
 namespace TestHelper
 {
@@ -82,4 +85,3 @@ namespace TestHelper
         }
     }
 }
-

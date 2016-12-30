@@ -1,17 +1,27 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+﻿// Copyright (c) Nejc Skofic. All rights reserved.
+// Licensed under the MIT license. See LICENSE.txt file in the project root for full license information.
+
 using System;
-using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Trestel.SqlQueryAnalyzer.Design;
+using Trestel.SqlQueryAnalyzer.Models;
 
 namespace Trestel.SqlQueryAnalyzer.Extensions
 {
+    /// <summary>
+    /// Extension methods for <see cref="SyntaxNode"/>.
+    /// </summary>
     internal static class SyntaxNodeExtensions
     {
+        /// <summary>
+        /// Retrieves the database connection hint for given syntax node.
+        /// </summary>
+        /// <param name="syntaxNode">The syntax node.</param>
+        /// <param name="semanticModel">The semantic model.</param>
+        /// <returns>Data about connection string if found.</returns>
         public static ConnectionStringData RetrieveDatabaseConnectionHint(this SyntaxNode syntaxNode, SemanticModel semanticModel)
         {
             IAssemblySymbol assemblySymbol = null;
@@ -81,23 +91,6 @@ namespace Trestel.SqlQueryAnalyzer.Extensions
             }
 
             return ConnectionStringData.Empty;
-        }
-    }
-
-    internal struct ConnectionStringData
-    {
-        public static readonly ConnectionStringData Empty = new ConnectionStringData();
-
-        public string ConnectionString { get; }
-        public DatabaseType DatabaseType { get; }
-        public bool IsDefined { get { return ConnectionString != null; } }
-
-        public ConnectionStringData(string connectionString, DatabaseType databaseType)
-        {
-            if (String.IsNullOrEmpty(connectionString)) throw new ArgumentException("Argument is null or empty.", nameof(connectionString));
-
-            ConnectionString = connectionString;
-            DatabaseType = databaseType;
         }
     }
 }

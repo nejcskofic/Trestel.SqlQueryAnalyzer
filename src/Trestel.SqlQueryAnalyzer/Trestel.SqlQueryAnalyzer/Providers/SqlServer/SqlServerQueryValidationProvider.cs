@@ -1,15 +1,21 @@
-﻿using System;
+﻿// Copyright (c) Nejc Skofic. All rights reserved.
+// Licensed under the MIT license. See LICENSE.txt file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Data.SqlClient;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Trestel.SqlQueryAnalyzer.Infrastructure;
+using Trestel.SqlQueryAnalyzer.Infrastructure.Models;
 
 namespace Trestel.SqlQueryAnalyzer.Providers.SqlServer
 {
+    /// <summary>
+    /// Provides validation provider for SQL Server. This provider uses TVF introduced in SQL Server 2014 for providing input parameter type information and
+    /// returning result set.
+    /// </summary>
+    /// <seealso cref="Trestel.SqlQueryAnalyzer.Infrastructure.IQueryValidationProvider" />
     public class SqlServerQueryValidationProvider : IQueryValidationProvider
     {
         // Ignore error 11529: The metadata could not be determined because every code path results in an error; see previous errors for some of these.
@@ -18,6 +24,11 @@ namespace Trestel.SqlQueryAnalyzer.Providers.SqlServer
 
         private readonly string _connectionString;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SqlServerQueryValidationProvider"/> class.
+        /// </summary>
+        /// <param name="connectionString">The connection string.</param>
+        /// <exception cref="System.ArgumentNullException">connectionString</exception>
         public SqlServerQueryValidationProvider(string connectionString)
         {
             if (connectionString == null) throw new ArgumentNullException(nameof(connectionString));
@@ -25,6 +36,14 @@ namespace Trestel.SqlQueryAnalyzer.Providers.SqlServer
             _connectionString = connectionString;
         }
 
+        /// <summary>
+        /// Validates the specified raw SQL query.
+        /// </summary>
+        /// <param name="rawSqlQuery">The raw SQL query.</param>
+        /// <returns>
+        /// Validation result of provided raw query along with expected input parameters and returning result set.
+        /// </returns>
+        /// <exception cref="System.ArgumentException">Argument null or empty. - rawSqlQuery</exception>
         public ValidationResult Validate(string rawSqlQuery)
         {
             if (String.IsNullOrEmpty(rawSqlQuery)) throw new ArgumentException("Argument null or empty.", nameof(rawSqlQuery));

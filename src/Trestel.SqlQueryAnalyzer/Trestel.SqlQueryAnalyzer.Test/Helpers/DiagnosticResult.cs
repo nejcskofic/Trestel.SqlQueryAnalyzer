@@ -1,5 +1,8 @@
-﻿using Microsoft.CodeAnalysis;
+﻿// Copyright (c) Nejc Skofic. All rights reserved.
+// Licensed under the MIT license. See LICENSE.txt file in the project root for full license information.
+
 using System;
+using Microsoft.CodeAnalysis;
 
 namespace TestHelper
 {
@@ -26,7 +29,9 @@ namespace TestHelper
         }
 
         public string Path { get; }
+
         public int Line { get; }
+
         public int Column { get; }
     }
 
@@ -45,6 +50,7 @@ namespace TestHelper
                 {
                     this.locations = new DiagnosticResultLocation[] { };
                 }
+
                 return this.locations;
             }
 

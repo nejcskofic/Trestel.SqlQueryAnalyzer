@@ -1,12 +1,15 @@
-﻿using System;
+﻿// Copyright (c) Nejc Skofic. All rights reserved.
+// Licensed under the MIT license. See LICENSE.txt file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Trestel.SqlQueryAnalyzer.Design;
 
 namespace Trestel.SqlQueryAnalyzer.Infrastructure
 {
+    /// <summary>
+    /// Contains factory for creating/returning services for consumption by analyser.
+    /// </summary>
     public class ServiceFactory
     {
         private readonly Func<string, IQueryValidationProvider>[] _registeredFactories;
@@ -16,12 +19,22 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure
         private IQueryValidationProvider _cachedProvider;
         private IDictionary<QueryValidationProviderCacheKey, IQueryValidationProvider> _queryValidationProviderCache;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ServiceFactory"/> class.
+        /// </summary>
         public ServiceFactory()
         {
             _registeredFactories = new Func<string, IQueryValidationProvider>[Enum.GetValues(typeof(DatabaseType)).Length];
             _validationProviderCacheMode = ValidationProviderCacheMode.None;
         }
 
+        /// <summary>
+        /// Registers the query validation provider factory.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <param name="factory">The factory.</param>
+        /// <returns>This instance</returns>
+        /// <exception cref="System.ArgumentNullException">factory</exception>
         public ServiceFactory RegisterQueryValidationProviderFactory(DatabaseType type, Func<string, IQueryValidationProvider> factory)
         {
             if (factory == null) throw new ArgumentNullException(nameof(factory));
@@ -30,6 +43,13 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure
             return this;
         }
 
+        /// <summary>
+        /// Gets the query validation provider.
+        /// </summary>
+        /// <param name="connectionString">The connection string.</param>
+        /// <param name="type">The type.</param>
+        /// <returns>Matching query validation provider.</returns>
+        /// <exception cref="System.ArgumentException">Argument is null or empty. - connectionString</exception>
         public IQueryValidationProvider GetQueryValidationProvider(string connectionString, DatabaseType type)
         {
             if (String.IsNullOrEmpty(connectionString)) throw new ArgumentException("Argument is null or empty.", nameof(connectionString));
@@ -45,6 +65,7 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure
                         _validationProviderCacheMode = ValidationProviderCacheMode.Single;
                         return _cachedProvider;
                     }
+
                 case ValidationProviderCacheMode.Single:
                     {
                         if (_cachedKey.ConnectionString == connectionString && _cachedKey.DatabaseType == type)
@@ -63,6 +84,7 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure
                         _validationProviderCacheMode = ValidationProviderCacheMode.Multiple;
                         return provider;
                     }
+
                 case ValidationProviderCacheMode.Multiple:
                     {
                         IQueryValidationProvider provider;
@@ -75,8 +97,10 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure
                             provider = factory(connectionString);
                             _queryValidationProviderCache.Add(key, provider);
                         }
+
                         return provider;
                     }
+
                 default:
                     return null;
             }
@@ -84,15 +108,15 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure
 
         private struct QueryValidationProviderCacheKey : IEquatable<QueryValidationProviderCacheKey>
         {
-            public string ConnectionString { get; }
-
-            public DatabaseType DatabaseType { get; }
-
-            public QueryValidationProviderCacheKey(string connectionString, DatabaseType databaseType )
+            public QueryValidationProviderCacheKey(string connectionString, DatabaseType databaseType)
             {
                 ConnectionString = connectionString;
                 DatabaseType = databaseType;
             }
+
+            public string ConnectionString { get; }
+
+            public DatabaseType DatabaseType { get; }
 
             public override bool Equals(object obj)
             {
@@ -117,7 +141,9 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure
             }
         }
 
+#pragma warning disable SA1201 // Elements must appear in the correct order
         private enum ValidationProviderCacheMode
+#pragma warning restore SA1201 // Elements must appear in the correct order
         {
             None,
             Single,

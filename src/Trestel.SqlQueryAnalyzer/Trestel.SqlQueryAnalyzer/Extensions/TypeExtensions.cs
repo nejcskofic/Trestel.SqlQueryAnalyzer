@@ -1,30 +1,101 @@
-﻿using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
+﻿// Copyright (c) Nejc Skofic. All rights reserved.
+// Licensed under the MIT license. See LICENSE.txt file in the project root for full license information.
+
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 
 namespace Trestel.SqlQueryAnalyzer.Extensions
 {
+    /// <summary>
+    /// Contains helper methods for working with Type and ITypeSymbol classes.
+    /// </summary>
     internal static class TypeExtensions
     {
-        #region ConvertFromRuntimeType
         /// <summary>
         /// Converts the type of from runtime.
         /// </summary>
         /// <param name="type">The type.</param>
         /// <param name="compilation">The compilation.</param>
-        /// <returns></returns>
-        /// <exception cref="System.ArgumentNullException">
-        /// </exception>
+        /// <returns>Corresponding <see cref="ITypeSymbol"/> for given <see cref="Type"/>.</returns>
+        /// <exception cref="System.ArgumentNullException">Type of compilation is null.</exception>
         public static ITypeSymbol ConvertFromRuntimeType(this Type type, Compilation compilation)
         {
             if (type == null) throw new ArgumentNullException(nameof(type));
             if (compilation == null) throw new ArgumentNullException(nameof(compilation));
 
             return ConvertFromRuntimeTypeInternal(type, compilation);
+        }
+
+        /// <summary>
+        /// Determines whether given type symbol is basic type.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns>True if given type symbol represents basic type.</returns>
+        public static bool IsBasicType(this ITypeSymbol type)
+        {
+            if (type == null) return false;
+
+            INamedTypeSymbol namedType = null;
+            if (type.TypeKind == TypeKind.Array)
+            {
+                var arrayType = type as IArrayTypeSymbol;
+                return arrayType.ElementType.SpecialType == SpecialType.System_Byte;
+            }
+
+            namedType = type as INamedTypeSymbol;
+            if (namedType == null) return false;
+
+            if (type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
+            {
+                namedType = namedType.TypeArguments[0] as INamedTypeSymbol;
+                if (namedType == null) return false;
+            }
+
+            switch (namedType.SpecialType)
+            {
+                case SpecialType.System_Boolean:
+                case SpecialType.System_Byte:
+                case SpecialType.System_Char:
+                case SpecialType.System_DateTime:
+                case SpecialType.System_Decimal:
+                case SpecialType.System_Double:
+                case SpecialType.System_Int16:
+                case SpecialType.System_Int32:
+                case SpecialType.System_Int64:
+                case SpecialType.System_Object:
+                case SpecialType.System_SByte:
+                case SpecialType.System_Single:
+                case SpecialType.System_String:
+                case SpecialType.System_UInt16:
+                case SpecialType.System_UInt32:
+                case SpecialType.System_UInt64:
+                    return true;
+            }
+
+            if (namedType.ContainingNamespace.Name == "System")
+            {
+                switch (namedType.Name)
+                {
+                    case "Guid":
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Determines whether this instance can assign the specified source.
+        /// </summary>
+        /// <param name="source">The source.</param>
+        /// <param name="target">The target.</param>
+        /// <param name="compilation">The compilation.</param>
+        /// <returns>True, if target symbol can be assigned to source (without explicit cast).</returns>
+        public static bool CanAssign(this ITypeSymbol source, ITypeSymbol target, Compilation compilation)
+        {
+            var conversionStatus = compilation.ClassifyConversion(source, target);
+            return conversionStatus.Exists && !conversionStatus.IsExplicit;
         }
 
         private static ITypeSymbol ConvertFromRuntimeTypeInternal(Type type, Compilation compilation)
@@ -73,82 +144,5 @@ namespace Trestel.SqlQueryAnalyzer.Extensions
 
             return compilation.CreateArrayTypeSymbol(innerType, rank);
         }
-        #endregion
-
-        #region IsPrimitiveType
-        /// <summary>
-        /// Determines whether [is c sharp primitive type] [the specified type].
-        /// </summary>
-        /// <param name="type">The type.</param>
-        /// <returns></returns>
-        public static bool IsBasicType(this ITypeSymbol type)
-        {
-            if (type == null) return false;
-
-            INamedTypeSymbol namedType = null;
-            if (type.TypeKind == TypeKind.Array)
-            {
-                var arrayType = type as IArrayTypeSymbol;
-                return arrayType.ElementType.SpecialType == SpecialType.System_Byte;
-            }
-            
-            namedType = type as INamedTypeSymbol;
-            if (namedType == null) return false;
-
-            if (type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T)
-            {
-                namedType = namedType.TypeArguments[0] as INamedTypeSymbol;
-                if (namedType == null) return false;
-            }
-
-            switch (namedType.SpecialType)
-            {
-                case SpecialType.System_Boolean:
-                case SpecialType.System_Byte:
-                case SpecialType.System_Char:
-                case SpecialType.System_DateTime:
-                case SpecialType.System_Decimal:
-                case SpecialType.System_Double:
-                case SpecialType.System_Int16:
-                case SpecialType.System_Int32:
-                case SpecialType.System_Int64:
-                case SpecialType.System_Object:
-                case SpecialType.System_SByte:
-                case SpecialType.System_Single:
-                case SpecialType.System_String:
-                case SpecialType.System_UInt16:
-                case SpecialType.System_UInt32:
-                case SpecialType.System_UInt64:
-                    return true;
-            }
-
-            if (namedType.ContainingNamespace.Name == "System")
-            {
-                switch (namedType.Name)
-                {
-                    case "Guid":
-                        return true;
-                }
-            }
-
-            // TODO byte array
-            return false;
-        }
-        #endregion
-
-        #region CanAssign
-        /// <summary>
-        /// Determines whether this instance can assign the specified source.
-        /// </summary>
-        /// <param name="source">The source.</param>
-        /// <param name="target">The target.</param>
-        /// <param name="compilation">The compilation.</param>
-        /// <returns></returns>
-        public static bool CanAssign(this ITypeSymbol source, ITypeSymbol target, Compilation compilation)
-        {
-            var conversionStatus = compilation.ClassifyConversion(source, target);
-            return conversionStatus.Exists && !conversionStatus.IsExplicit;
-        }
-        #endregion
     }
 }

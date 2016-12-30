@@ -1,11 +1,13 @@
-﻿using System;
-using TestHelper;
-using Microsoft.CodeAnalysis.Diagnostics;
+﻿// Copyright (c) Nejc Skofic. All rights reserved.
+// Licensed under the MIT license. See LICENSE.txt file in the project root for full license information.
+
 using Microsoft.CodeAnalysis;
 using NUnit.Framework;
-using Trestel.SqlQueryAnalyzer.Infrastructure;
-using Trestel.SqlQueryAnalyzer.Design;
+using TestHelper;
 using Trestel.SqlQueryAnalyzer.Analyzers;
+using Trestel.SqlQueryAnalyzer.Design;
+using Trestel.SqlQueryAnalyzer.Infrastructure;
+using Trestel.SqlQueryAnalyzer.Infrastructure.Models;
 
 namespace Tests
 {
