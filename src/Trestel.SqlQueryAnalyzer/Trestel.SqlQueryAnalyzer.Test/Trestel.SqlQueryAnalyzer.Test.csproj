@@ -104,7 +104,9 @@
     <Compile Include="Helpers\MockupValidationProvider.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Templates\SourceCodeTemplates.cs" />
+    <Compile Include="Tests\CachingServiceUsage.cs" />
     <Compile Include="Tests\DatabaseHintAttributeUsage.cs" />
+    <Compile Include="Tests\MemoryCacheUsage.cs" />
     <Compile Include="Tests\ResultMapping.cs" />
     <Compile Include="Tests\ServiceFactoryUsage.cs" />
     <Compile Include="Tests\SqlSyntax.cs" />

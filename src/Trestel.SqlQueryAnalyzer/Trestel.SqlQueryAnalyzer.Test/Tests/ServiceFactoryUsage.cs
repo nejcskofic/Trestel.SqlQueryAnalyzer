@@ -6,6 +6,7 @@ using NUnit.Framework;
 using TestHelper;
 using Trestel.SqlQueryAnalyzer.Design;
 using Trestel.SqlQueryAnalyzer.Infrastructure;
+using Trestel.SqlQueryAnalyzer.Infrastructure.Models;
 
 namespace Tests
 {
@@ -17,7 +18,7 @@ namespace Tests
         {
             var factory = new ServiceFactory();
 
-            Assert.IsNull(factory.GetQueryValidationProvider("<something>", DatabaseType.SqlServer));
+            Assert.IsNull(factory.GetQueryValidationProvider(new ConnectionStringData("<something>", DatabaseType.SqlServer)));
         }
 
         [Test]
@@ -25,7 +26,7 @@ namespace Tests
         {
             var factory = new ServiceFactory();
 
-            Assert.Catch<ArgumentException>(() => factory.GetQueryValidationProvider("", DatabaseType.SqlServer));
+            Assert.Catch<ArgumentException>(() => factory.GetQueryValidationProvider(new ConnectionStringData("", DatabaseType.SqlServer)));
         }
 
         [Test]
@@ -35,7 +36,7 @@ namespace Tests
             var validationProvider = new MockupValidationProvider();
             factory.RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connectionString) => validationProvider);
 
-            Assert.AreSame(validationProvider, factory.GetQueryValidationProvider("<something>", DatabaseType.SqlServer));
+            Assert.AreSame(validationProvider, factory.GetQueryValidationProvider(new ConnectionStringData("<something>", DatabaseType.SqlServer)));
         }
 
         [Test]
@@ -43,11 +44,13 @@ namespace Tests
         {
             var factory = new ServiceFactory();
             factory.RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connectionString) => new MockupValidationProvider());
+            var connectionData = new ConnectionStringData("<something>", DatabaseType.SqlServer);
+            var otherConnectionData = new ConnectionStringData("<something other>", DatabaseType.SqlServer);
 
-            var retrievedProvider = factory.GetQueryValidationProvider("<something>", DatabaseType.SqlServer);
-            Assert.AreSame(retrievedProvider, factory.GetQueryValidationProvider("<something>", DatabaseType.SqlServer));
-            Assert.AreNotSame(retrievedProvider, factory.GetQueryValidationProvider("<something other>", DatabaseType.SqlServer));
-            Assert.AreSame(retrievedProvider, factory.GetQueryValidationProvider("<something>", DatabaseType.SqlServer));
+            var retrievedProvider = factory.GetQueryValidationProvider(connectionData);
+            Assert.AreSame(retrievedProvider, factory.GetQueryValidationProvider(connectionData));
+            Assert.AreNotSame(retrievedProvider, factory.GetQueryValidationProvider(otherConnectionData));
+            Assert.AreSame(retrievedProvider, factory.GetQueryValidationProvider(connectionData));
         }
     }
 }

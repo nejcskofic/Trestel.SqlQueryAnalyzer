@@ -3,6 +3,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Trestel.SqlQueryAnalyzer.Infrastructure;
 using Trestel.SqlQueryAnalyzer.Infrastructure.Models;
 
@@ -37,6 +39,14 @@ namespace TestHelper
             }
         }
 
+        public bool EnableThrottling
+        {
+            get
+            {
+                return false;
+            }
+        }
+
         public MockupValidationProvider WithConnectionString(string connectionString)
         {
             _connectionStrings.Add(connectionString);
@@ -52,7 +62,7 @@ namespace TestHelper
             return this;
         }
 
-        public ValidationResult Validate(string rawSqlQuery)
+        public Task<ValidationResult> ValidateAsync(string rawSqlQuery, CancellationToken cancellationToken)
         {
             if (rawSqlQuery == null) throw new ArgumentNullException(nameof(rawSqlQuery));
             _accessedQueries.Add(rawSqlQuery);
@@ -63,7 +73,7 @@ namespace TestHelper
                 throw new ArgumentException("There is no configured result for following raw query: " + rawSqlQuery);
             }
 
-            return result;
+            return Task.FromResult(result);
         }
     }
 }

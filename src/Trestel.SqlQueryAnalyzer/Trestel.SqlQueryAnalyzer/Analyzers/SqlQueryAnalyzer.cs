@@ -5,13 +5,17 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Trestel.SqlQueryAnalyzer.Extensions;
+using Trestel.SqlQueryAnalyzer.Helpers;
 using Trestel.SqlQueryAnalyzer.Infrastructure;
 using Trestel.SqlQueryAnalyzer.Infrastructure.Models;
+using Trestel.SqlQueryAnalyzer.Services;
 
 namespace Trestel.SqlQueryAnalyzer.Analyzers
 {
@@ -69,24 +73,25 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
         /// </summary>
         public const string MissingDatabaseHintAttributeDiagnosticId = "SQL0008";
 
-        private static readonly DiagnosticDescriptor FailedToValidateDescriptor = new DiagnosticDescriptor(FailedToValidateDiagnosticId, "Unable to complete validation", "Could not validate query because of following error: {0}", CategoryName, DiagnosticSeverity.Info, true, "Analyzer should be able to complete validation", null);
+        private static readonly DiagnosticDescriptor FailedToValidateDescriptor = new DiagnosticDescriptor(FailedToValidateDiagnosticId, "Unable to complete validation", "Could not validate query because of following error: {0}", CategoryName, DiagnosticSeverity.Warning, true, "Analyzer should be able to complete validation", null);
         private static readonly DiagnosticDescriptor ErrorsInSqlQueryDescriptor = new DiagnosticDescriptor(ErrorsInSqlQueryDiagnosticId, "Error in SQL statement", "There are following errors in SQL query:\n{0}", CategoryName, DiagnosticSeverity.Error, true, "SQL query should be syntactically correct and use existing database objects.", null);
         private static readonly DiagnosticDescriptor UnsupportedDescriptor = new DiagnosticDescriptor(UnsupportedDiagnosticId, "Validation not supported", "Validation of SQL query string that is not literal is not supported.", CategoryName, DiagnosticSeverity.Warning, true, "SQL query should be entered as string literal.", null);
         private static readonly DiagnosticDescriptor MissingInResultDescriptor = new DiagnosticDescriptor(MissingColumnsInQueryResultDiagnosticId, "Missing columns", "Following columns were expected in result set, but were not found:\n{0}", CategoryName, DiagnosticSeverity.Error, true, "SQL query should return all expected columns.", null);
         private static readonly DiagnosticDescriptor UnusedColumnsDescriptor = new DiagnosticDescriptor(UnusedColumnsInQueryResultDiagnosticId, "Unused columns", "Following columns were found in result set, but are not being used:\n{0}", CategoryName, DiagnosticSeverity.Error, true, "SQL query should return only necessary columns.", null);
         private static readonly DiagnosticDescriptor PropertyTypeMismatchDescriptor = new DiagnosticDescriptor(MismatchBetweenPropertyTypesDiagnosticId, "Types do not match", "For column '{0}' expected type '{1}', but found type '{2}'.", CategoryName, DiagnosticSeverity.Error, true, "Property type should match column type.", null);
         private static readonly DiagnosticDescriptor TypeMismatchDescriptor = new DiagnosticDescriptor(MismatchBetweenTypesDiagnosticId, "Types do not match", "Expected type '{0}', but found type '{1}'.", CategoryName, DiagnosticSeverity.Error, true, "Property type should match column type.", null);
-        private static readonly DiagnosticDescriptor MissingDatabaseHintDescriptor = new DiagnosticDescriptor(MissingDatabaseHintAttributeDiagnosticId, "Missing database hint", "Analysis cannot continue because there is no 'Trestel.Database.Design.DatabaseHintAttribute' attribute applied to method, class or assembly.", CategoryName, DiagnosticSeverity.Info, true, "Attribute 'Trestel.Database.Design.DatabaseHintAttribute' is required to specify connection to database for analisys.", null);
+        private static readonly DiagnosticDescriptor MissingDatabaseHintDescriptor = new DiagnosticDescriptor(MissingDatabaseHintAttributeDiagnosticId, "Missing database hint", "Analysis cannot continue because there is no 'Trestel.Database.Design.DatabaseHintAttribute' attribute applied to method, class or assembly.", CategoryName, DiagnosticSeverity.Warning, true, "Attribute 'Trestel.Database.Design.DatabaseHintAttribute' is required to specify connection to database for analisys.", null);
 
         private readonly ServiceFactory _serviceFactory;
+        private readonly CachingService _cachingService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="SqlQueryAnalyzer"/> class.
         /// </summary>
         public SqlQueryAnalyzer()
         {
-            _serviceFactory = new ServiceFactory();
-            _serviceFactory.BuildUp();
+            _serviceFactory = new ServiceFactory().BuildUp();
+            _cachingService = new CachingService();
         }
 
         /// <summary>
@@ -99,6 +104,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
         {
             if (factory == null) throw new ArgumentNullException(nameof(factory));
             _serviceFactory = factory;
+            _cachingService = new CachingService();
         }
 
         /// <summary>
@@ -130,6 +136,11 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
         }
 
         private void AnalyzeSymbol(SyntaxNodeAnalysisContext context)
+        {
+            AsyncHelper.RunSync(() => AnalyzeSymbolAsync(context));
+        }
+
+        private async Task AnalyzeSymbolAsync(SyntaxNodeAnalysisContext context)
         {
             var node = (InvocationExpressionSyntax)context.Node;
 
@@ -177,38 +188,66 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
                 return;
             }
 
-            // TODO cache
-            var provider = _serviceFactory.GetQueryValidationProvider(connectionData.ConnectionString, connectionData.DatabaseType);
-            if (provider == null) return;
-
+            ValidationResult result = null;
             try
             {
-                var result = provider.Validate(rawSqlString);
-                if (result.IsSuccess)
-                {
-                    // TODO -> validate success
-                    // TODO refactor
-                    if (!(node.Parent is ArgumentSyntax))
-                    {
-                        // if this is not directly used as argument syntax, any analysis is not supported
-                        // TODO Flow analysis?
-                        return;
-                    }
-
-                    var methodNode = node.Parent.Parent.Parent as InvocationExpressionSyntax;
-                    if (methodNode == null) return;
-
-                    AnalyzeMethodCall(methodNode, result.ValidatedQuery, context);
-                }
-                else
-                {
-                    context.ReportDiagnostic(Diagnostic.Create(ErrorsInSqlQueryDescriptor, node.GetLocation(), String.Join("\n", result.Errors)));
-                }
+                result = await _cachingService.GetOrAddValidationResultAsync(
+                    connectionData,
+                    rawSqlString,
+                    () => ValidateSqlStringAsync(rawSqlString, connectionData, argumentExpression, context.CancellationToken));
+                if (result == null) return;
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception ex)
             {
+                // TODO: only squiggle SQL litteral
                 context.ReportDiagnostic(Diagnostic.Create(FailedToValidateDescriptor, node.GetLocation(), ex.Message));
+                return;
             }
+
+            context.CancellationToken.ThrowIfCancellationRequested();
+
+            if (result.IsSuccess)
+            {
+                // TODO -> validate success
+                // TODO refactor
+                if (!(node.Parent is ArgumentSyntax))
+                {
+                    // if this is not directly used as argument syntax, any analysis is not supported
+                    // TODO Flow analysis?
+                    return;
+                }
+
+                var methodNode = node.Parent.Parent.Parent as InvocationExpressionSyntax;
+                if (methodNode == null) return;
+
+                AnalyzeMethodCall(methodNode, result.ValidatedQuery, context);
+            }
+            else
+            {
+                context.ReportDiagnostic(Diagnostic.Create(ErrorsInSqlQueryDescriptor, node.GetLocation(), String.Join("\n", result.Errors)));
+            }
+        }
+
+        private async Task<ValidationResult> ValidateSqlStringAsync(string rawSqlString, ConnectionStringData connectionData, LiteralExpressionSyntax target, CancellationToken cancellationToken)
+        {
+            // check if processing was canceled
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var provider = _serviceFactory.GetQueryValidationProvider(connectionData);
+            if (provider == null) return null;
+
+            if (provider.EnableThrottling && _cachingService.ContainsOrAddDocumentLocation(target))
+            {
+                await Task.Delay(750);
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+
+            var result = await provider.ValidateAsync(rawSqlString, cancellationToken);
+            return result;
         }
 
         private static void AnalyzeMethodCall(InvocationExpressionSyntax method, ValidatedQuery validatedQueryInfo, SyntaxNodeAnalysisContext context)

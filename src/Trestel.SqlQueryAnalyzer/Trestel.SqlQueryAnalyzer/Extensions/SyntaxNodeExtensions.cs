@@ -1,13 +1,12 @@
 ﻿// Copyright (c) Nejc Skofic. All rights reserved.
 // Licensed under the MIT license. See LICENSE.txt file in the project root for full license information.
 
-using System;
 using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Trestel.SqlQueryAnalyzer.Design;
-using Trestel.SqlQueryAnalyzer.Models;
+using Trestel.SqlQueryAnalyzer.Infrastructure.Models;
 
 namespace Trestel.SqlQueryAnalyzer.Extensions
 {

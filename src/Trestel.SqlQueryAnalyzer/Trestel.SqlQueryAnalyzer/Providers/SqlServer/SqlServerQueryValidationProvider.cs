@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Data.SqlClient;
 using System.Globalization;
+using System.Threading;
+using System.Threading.Tasks;
 using Trestel.SqlQueryAnalyzer.Infrastructure;
 using Trestel.SqlQueryAnalyzer.Infrastructure.Models;
 
@@ -37,14 +39,32 @@ namespace Trestel.SqlQueryAnalyzer.Providers.SqlServer
         }
 
         /// <summary>
+        /// Gets a value indicating whether throttling should be enabled. If static validation provider performs any lengthy operation
+        /// (such as direct query to database), you should enable throttling which will delay call to <see cref="ValidateAsync(string, CancellationToken)" />.
+        /// While user is typing, query analyzer tasks may get cancelled before expensive calls will be performed in
+        /// <see cref="ValidateAsync(string, CancellationToken)" />.
+        /// </summary>
+        /// <value>
+        ///   <c>true</c> if throttling is enabeld; otherwise, <c>false</c>.
+        /// </value>
+        public bool EnableThrottling
+        {
+            get
+            {
+                return true;
+            }
+        }
+
+        /// <summary>
         /// Validates the specified raw SQL query.
         /// </summary>
         /// <param name="rawSqlQuery">The raw SQL query.</param>
+        /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>
         /// Validation result of provided raw query along with expected input parameters and returning result set.
         /// </returns>
         /// <exception cref="System.ArgumentException">Argument null or empty. - rawSqlQuery</exception>
-        public ValidationResult Validate(string rawSqlQuery)
+        public async Task<ValidationResult> ValidateAsync(string rawSqlQuery, CancellationToken cancellationToken)
         {
             if (String.IsNullOrEmpty(rawSqlQuery)) throw new ArgumentException("Argument null or empty.", nameof(rawSqlQuery));
 
@@ -57,7 +77,7 @@ namespace Trestel.SqlQueryAnalyzer.Providers.SqlServer
                 var command = CreateQueryForDescribingFirstResultSet(connection, rawSqlQuery);
 
                 connection.Open();
-                var reader = command.ExecuteReader();
+                var reader = await command.ExecuteReaderAsync(cancellationToken);
                 while (reader.Read())
                 {
                     if (reader.IsDBNull(5))

@@ -24,11 +24,11 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.Models
             _errors = ImmutableArray.Create<string>();
         }
 
-        private ValidationResult(IEnumerable<string> errors)
+        private ValidationResult(string[] errors)
         {
             _isSuccess = false;
             _validatedQuery = null;
-            _errors = ImmutableArray.CreateRange(errors);
+            _errors = ImmutableArray.Create(errors);
         }
 
         /// <summary>
@@ -92,7 +92,17 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.Models
         /// <returns>Failed analysis result.</returns>
         public static ValidationResult Failure(IEnumerable<string> errors)
         {
-            if (errors == null) errors = Enumerable.Empty<string>();
+            var arrayOfErrors = errors == null ? new string[0] : errors.ToArray();
+            return new ValidationResult(arrayOfErrors);
+        }
+
+        /// <summary>
+        /// Creates failed analysis result with specified errors.
+        /// </summary>
+        /// <param name="errors">The errors.</param>
+        /// <returns>Failed analysis result.</returns>
+        public static ValidationResult Failure(params string[] errors)
+        {
             return new ValidationResult(errors);
         }
     }

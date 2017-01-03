@@ -2,8 +2,11 @@
 // Licensed under the MIT license. See LICENSE.txt file in the project root for full license information.
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 using Trestel.SqlQueryAnalyzer.Design;
+using Trestel.SqlQueryAnalyzer.Infrastructure.Models;
 
 namespace Trestel.SqlQueryAnalyzer.Infrastructure
 {
@@ -13,11 +16,9 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure
     public class ServiceFactory
     {
         private readonly Func<string, IQueryValidationProvider>[] _registeredFactories;
-        private ValidationProviderCacheMode _validationProviderCacheMode;
+        private readonly IDictionary<ConnectionStringData, IQueryValidationProvider> _queryValidationProviderCache;
 
-        private QueryValidationProviderCacheKey _cachedKey;
-        private IQueryValidationProvider _cachedProvider;
-        private IDictionary<QueryValidationProviderCacheKey, IQueryValidationProvider> _queryValidationProviderCache;
+        private volatile CachedEntry _cachedEntry;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ServiceFactory"/> class.
@@ -25,7 +26,7 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure
         public ServiceFactory()
         {
             _registeredFactories = new Func<string, IQueryValidationProvider>[Enum.GetValues(typeof(DatabaseType)).Length];
-            _validationProviderCacheMode = ValidationProviderCacheMode.None;
+            _queryValidationProviderCache = new ConcurrentDictionary<ConnectionStringData, IQueryValidationProvider>();
         }
 
         /// <summary>
@@ -46,108 +47,47 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure
         /// <summary>
         /// Gets the query validation provider.
         /// </summary>
-        /// <param name="connectionString">The connection string.</param>
-        /// <param name="type">The type.</param>
-        /// <returns>Matching query validation provider.</returns>
+        /// <param name="connectionData">The connection data.</param>
+        /// <returns>
+        /// Matching query validation provider.
+        /// </returns>
         /// <exception cref="System.ArgumentException">Argument is null or empty. - connectionString</exception>
-        public IQueryValidationProvider GetQueryValidationProvider(string connectionString, DatabaseType type)
+        public IQueryValidationProvider GetQueryValidationProvider(ConnectionStringData connectionData)
         {
-            if (String.IsNullOrEmpty(connectionString)) throw new ArgumentException("Argument is null or empty.", nameof(connectionString));
+            if (!connectionData.IsDefined) return null;
 
-            switch (_validationProviderCacheMode)
+            var cachedEntry = _cachedEntry;
+            if (cachedEntry != null && cachedEntry.ConnectionData == connectionData)
             {
-                case ValidationProviderCacheMode.None:
-                    {
-                        var factory = _registeredFactories[(int)type];
-                        if (factory == null) return null;
-                        _cachedProvider = factory(connectionString);
-                        _cachedKey = new QueryValidationProviderCacheKey(connectionString, type);
-                        _validationProviderCacheMode = ValidationProviderCacheMode.Single;
-                        return _cachedProvider;
-                    }
-
-                case ValidationProviderCacheMode.Single:
-                    {
-                        if (_cachedKey.ConnectionString == connectionString && _cachedKey.DatabaseType == type)
-                        {
-                            return _cachedProvider;
-                        }
-
-                        var factory = _registeredFactories[(int)type];
-                        if (factory == null) return null;
-
-                        // add existing to dictionary
-                        if (_queryValidationProviderCache == null) _queryValidationProviderCache = new Dictionary<QueryValidationProviderCacheKey, IQueryValidationProvider>();
-                        _queryValidationProviderCache.Add(_cachedKey, _cachedProvider);
-                        var provider = factory(connectionString);
-                        _queryValidationProviderCache.Add(new QueryValidationProviderCacheKey(connectionString, type), provider);
-                        _validationProviderCacheMode = ValidationProviderCacheMode.Multiple;
-                        return provider;
-                    }
-
-                case ValidationProviderCacheMode.Multiple:
-                    {
-                        IQueryValidationProvider provider;
-                        var key = new QueryValidationProviderCacheKey(connectionString, type);
-                        if (!_queryValidationProviderCache.TryGetValue(key, out provider))
-                        {
-                            var factory = _registeredFactories[(int)type];
-                            if (factory == null) return null;
-
-                            provider = factory(connectionString);
-                            _queryValidationProviderCache.Add(key, provider);
-                        }
-
-                        return provider;
-                    }
-
-                default:
-                    return null;
+                return cachedEntry.Provider;
             }
+
+            IQueryValidationProvider provider;
+            if (!_queryValidationProviderCache.TryGetValue(connectionData, out provider))
+            {
+                var factory = _registeredFactories[(int)connectionData.DatabaseType];
+                if (factory == null) return null;
+
+                provider = factory(connectionData.ConnectionString);
+                _queryValidationProviderCache.Add(connectionData, provider);
+                cachedEntry = new CachedEntry(connectionData, provider);
+                Interlocked.Exchange(ref _cachedEntry, cachedEntry);
+            }
+
+            return provider;
         }
 
-        private struct QueryValidationProviderCacheKey : IEquatable<QueryValidationProviderCacheKey>
+        private sealed class CachedEntry
         {
-            public QueryValidationProviderCacheKey(string connectionString, DatabaseType databaseType)
+            public CachedEntry(ConnectionStringData connectionData, IQueryValidationProvider provider)
             {
-                ConnectionString = connectionString;
-                DatabaseType = databaseType;
+                ConnectionData = connectionData;
+                Provider = provider;
             }
 
-            public string ConnectionString { get; }
+            public ConnectionStringData ConnectionData { get; }
 
-            public DatabaseType DatabaseType { get; }
-
-            public override bool Equals(object obj)
-            {
-                return obj is QueryValidationProviderCacheKey ? Equals((QueryValidationProviderCacheKey)obj) : false;
-            }
-
-            public override int GetHashCode()
-            {
-                unchecked
-                {
-                    int hash = 17;
-                    hash = hash * 31 + (ConnectionString != null ? ConnectionString.GetHashCode() : 0);
-                    hash = hash * 31 + (int)DatabaseType;
-                    return hash;
-                }
-            }
-
-            public bool Equals(QueryValidationProviderCacheKey other)
-            {
-                return ConnectionString == other.ConnectionString &&
-                    DatabaseType == other.DatabaseType;
-            }
-        }
-
-#pragma warning disable SA1201 // Elements must appear in the correct order
-        private enum ValidationProviderCacheMode
-#pragma warning restore SA1201 // Elements must appear in the correct order
-        {
-            None,
-            Single,
-            Multiple
+            public IQueryValidationProvider Provider { get; }
         }
     }
 }
