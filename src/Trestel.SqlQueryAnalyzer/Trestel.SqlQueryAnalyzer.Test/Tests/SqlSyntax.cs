@@ -72,7 +72,7 @@ namespace TestNamespace
 
             var expected = new DiagnosticResult
             {
-                Id = SqlQueryAnalyzer.ErrorsInSqlQueryDiagnosticId,
+                Id = SqlQueryAnalyzerDiagnostic.ErrorsInSqlQueryDiagnosticId,
                 Message = "There are following errors in SQL query:\nIncorrect syntax near the keyword 'FROM'.",
                 Severity = DiagnosticSeverity.Error,
                 Locations = new[] { new DiagnosticResultLocation("Test0.cs", 14, 23) }

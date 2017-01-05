@@ -154,7 +154,7 @@ namespace TestNamespace
 
             var expected = new DiagnosticResult
             {
-                Id = SqlQueryAnalyzer.MissingDatabaseHintAttributeDiagnosticId,
+                Id = SqlQueryAnalyzerDiagnostic.MissingDatabaseHintAttributeDiagnosticId,
                 Message = "Analysis cannot continue because there is no 'Trestel.Database.Design.DatabaseHintAttribute' attribute applied to method, class or assembly.",
                 Severity = DiagnosticSeverity.Warning,
                 Locations = new[] { new DiagnosticResultLocation("Test0.cs", 12, 32) }

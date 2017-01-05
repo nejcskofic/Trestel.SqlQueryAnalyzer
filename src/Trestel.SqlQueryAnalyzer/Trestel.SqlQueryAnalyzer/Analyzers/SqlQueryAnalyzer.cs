@@ -26,62 +26,6 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class SqlQueryAnalyzer : DiagnosticAnalyzer
     {
-        // TODO: Add error type when target type does not contain any properties (bug in provider or bug in code)
-
-        /// <summary>
-        /// The category name
-        /// </summary>
-        public const string CategoryName = "SQL";
-
-        /// <summary>
-        /// The failed to validate diagnostic identifier
-        /// </summary>
-        public const string FailedToValidateDiagnosticId = "SQL0001";
-
-        /// <summary>
-        /// The errors in SQL query diagnostic identifier
-        /// </summary>
-        public const string ErrorsInSqlQueryDiagnosticId = "SQL0002";
-
-        /// <summary>
-        /// The unsupported diagnostic identifier
-        /// </summary>
-        public const string UnsupportedDiagnosticId = "SQL0003";
-
-        /// <summary>
-        /// The missing columns in query result diagnostic identifier
-        /// </summary>
-        public const string MissingColumnsInQueryResultDiagnosticId = "SQL0004";
-
-        /// <summary>
-        /// The unused columns in query result diagnostic identifier
-        /// </summary>
-        public const string UnusedColumnsInQueryResultDiagnosticId = "SQL0005";
-
-        /// <summary>
-        /// The mismatch between property types diagnostic identifier
-        /// </summary>
-        public const string MismatchBetweenPropertyTypesDiagnosticId = "SQL0006";
-
-        /// <summary>
-        /// The mismatch between types diagnostic identifier
-        /// </summary>
-        public const string MismatchBetweenTypesDiagnosticId = "SQL0007";
-
-        /// <summary>
-        /// The missing database hint attribute diagnostic identifier
-        /// </summary>
-        public const string MissingDatabaseHintAttributeDiagnosticId = "SQL0008";
-
-        private static readonly DiagnosticDescriptor FailedToValidateDescriptor = new DiagnosticDescriptor(FailedToValidateDiagnosticId, "Unable to complete validation", "Could not validate query because of following error: {0}", CategoryName, DiagnosticSeverity.Warning, true, "Analyzer should be able to complete validation", null);
-        private static readonly DiagnosticDescriptor ErrorsInSqlQueryDescriptor = new DiagnosticDescriptor(ErrorsInSqlQueryDiagnosticId, "Error in SQL statement", "There are following errors in SQL query:\n{0}", CategoryName, DiagnosticSeverity.Error, true, "SQL query should be syntactically correct and use existing database objects.", null);
-        private static readonly DiagnosticDescriptor UnsupportedDescriptor = new DiagnosticDescriptor(UnsupportedDiagnosticId, "Validation not supported", "Validation of SQL query string that is not literal is not supported.", CategoryName, DiagnosticSeverity.Warning, true, "SQL query should be entered as string literal.", null);
-        private static readonly DiagnosticDescriptor MissingInResultDescriptor = new DiagnosticDescriptor(MissingColumnsInQueryResultDiagnosticId, "Missing columns", "Following columns were expected in result set, but were not found:\n{0}", CategoryName, DiagnosticSeverity.Error, true, "SQL query should return all expected columns.", null);
-        private static readonly DiagnosticDescriptor UnusedColumnsDescriptor = new DiagnosticDescriptor(UnusedColumnsInQueryResultDiagnosticId, "Unused columns", "Following columns were found in result set, but are not being used:\n{0}", CategoryName, DiagnosticSeverity.Error, true, "SQL query should return only necessary columns.", null);
-        private static readonly DiagnosticDescriptor PropertyTypeMismatchDescriptor = new DiagnosticDescriptor(MismatchBetweenPropertyTypesDiagnosticId, "Types do not match", "For column '{0}' expected type '{1}', but found type '{2}'.", CategoryName, DiagnosticSeverity.Error, true, "Property type should match column type.", null);
-        private static readonly DiagnosticDescriptor TypeMismatchDescriptor = new DiagnosticDescriptor(MismatchBetweenTypesDiagnosticId, "Types do not match", "Expected type '{0}', but found type '{1}'.", CategoryName, DiagnosticSeverity.Error, true, "Property type should match column type.", null);
-        private static readonly DiagnosticDescriptor MissingDatabaseHintDescriptor = new DiagnosticDescriptor(MissingDatabaseHintAttributeDiagnosticId, "Missing database hint", "Analysis cannot continue because there is no 'Trestel.Database.Design.DatabaseHintAttribute' attribute applied to method, class or assembly.", CategoryName, DiagnosticSeverity.Warning, true, "Attribute 'Trestel.Database.Design.DatabaseHintAttribute' is required to specify connection to database for analisys.", null);
-
         private readonly ServiceFactory _serviceFactory;
         private readonly CachingService _cachingService;
 
@@ -114,15 +58,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
         {
             get
             {
-                return ImmutableArray.Create(
-                    FailedToValidateDescriptor,
-                    ErrorsInSqlQueryDescriptor,
-                    UnsupportedDescriptor,
-                    MissingInResultDescriptor,
-                    UnusedColumnsDescriptor,
-                    PropertyTypeMismatchDescriptor,
-                    TypeMismatchDescriptor,
-                    MissingDatabaseHintDescriptor);
+                return SqlQueryAnalyzerDiagnostic.GetSupportedDiagnostics();
             }
         }
 
@@ -144,34 +80,15 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
         {
             var node = (InvocationExpressionSyntax)context.Node;
 
-            var nodeExpression = node.Expression as MemberAccessExpressionSyntax;
-            if (nodeExpression == null) return;
-
-            if (nodeExpression.Name.Identifier.Text != "From") return;
-
-            SimpleNameSyntax classIdentifier = nodeExpression.Expression as IdentifierNameSyntax;
-            if (classIdentifier == null)
-            {
-                var exprSyntx = nodeExpression.Expression as MemberAccessExpressionSyntax;
-                classIdentifier = exprSyntx.Name;
-            }
-
-            // TODO: Type aliasing breaks this logic
-            if (classIdentifier != null && classIdentifier.Identifier.Text != "Sql") return;
-
-            var nodeSymbol = context.SemanticModel.GetSymbolInfo(node).Symbol as IMethodSymbol;
-            if (nodeSymbol == null) return;
-
-            if (nodeSymbol.ToDisplayString() != "Trestel.Database.Sql.From(string)") return;
+            if (!IsSqlFromMethodCall(node, context.SemanticModel)) return;
 
             // load string
             if (node.ArgumentList.Arguments.Count != 1) return;
             var argumentExpression = node.ArgumentList.Arguments[0].Expression as LiteralExpressionSyntax;
             if (argumentExpression == null || argumentExpression.Kind() != SyntaxKind.StringLiteralExpression)
             {
-                // TODO: flow analysis and computation engine when argument is not literal?
                 // raise unsupported diagnostics
-                context.ReportDiagnostic(Diagnostic.Create(UnsupportedDescriptor, node.ArgumentList.Arguments[0].GetLocation()));
+                context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateUnsupportedDiagnostic(node.ArgumentList.Arguments[0].GetLocation()));
                 return;
             }
 
@@ -184,7 +101,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
             var connectionData = node.RetrieveDatabaseConnectionHint(context.SemanticModel);
             if (!connectionData.IsDefined)
             {
-                context.ReportDiagnostic(Diagnostic.Create(MissingDatabaseHintDescriptor, node.ArgumentList.Arguments[0].GetLocation()));
+                context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateMissingDatabaseHintDiagnostic(node.ArgumentList.Arguments[0].GetLocation()));
                 return;
             }
 
@@ -204,7 +121,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
             catch (Exception ex)
             {
                 // TODO: only squiggle SQL litteral
-                context.ReportDiagnostic(Diagnostic.Create(FailedToValidateDescriptor, node.GetLocation(), ex.Message));
+                context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateFailedToValidateDiagnostic(node.GetLocation(), ex.Message));
                 return;
             }
 
@@ -228,8 +145,33 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
             }
             else
             {
-                context.ReportDiagnostic(Diagnostic.Create(ErrorsInSqlQueryDescriptor, node.GetLocation(), String.Join("\n", result.Errors)));
+                context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateErrorsInSqlQueryDiagnostic(node.GetLocation(), result.Errors));
             }
+        }
+
+        private static bool IsSqlFromMethodCall(InvocationExpressionSyntax node, SemanticModel semanticModel)
+        {
+            var nodeExpression = node.Expression as MemberAccessExpressionSyntax;
+            if (nodeExpression == null) return false;
+
+            if (nodeExpression.Name.Identifier.Text != "From") return false;
+
+            SimpleNameSyntax classIdentifier = nodeExpression.Expression as IdentifierNameSyntax;
+            if (classIdentifier == null)
+            {
+                var exprSyntx = nodeExpression.Expression as MemberAccessExpressionSyntax;
+                classIdentifier = exprSyntx.Name;
+            }
+
+            // TODO: Type aliasing breaks this logic
+            if (classIdentifier != null && classIdentifier.Identifier.Text != "Sql") return false;
+
+            var nodeSymbol = semanticModel.GetSymbolInfo(node).Symbol as IMethodSymbol;
+            if (nodeSymbol == null) return false;
+
+            if (nodeSymbol.ToDisplayString() != "Trestel.Database.Sql.From(string)") return false;
+
+            return true;
         }
 
         private async Task<ValidationResult> ValidateSqlStringAsync(string rawSqlString, ConnectionStringData connectionData, LiteralExpressionSyntax target, CancellationToken cancellationToken)
@@ -294,7 +236,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
                 var namedSourceType = validatedQueryInfo.OutputColumns[0].Type.ConvertFromRuntimeType(context.SemanticModel.Compilation);
                 if (namedSourceType != null && !namedSourceType.CanAssign(queryResultType, context.SemanticModel.Compilation))
                 {
-                    context.ReportDiagnostic(Diagnostic.Create(TypeMismatchDescriptor, method.GetLocation(), namedSourceType.ToDisplayString(), queryResultType.ToDisplayString()));
+                    context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateTypeMismatchDiagnostic(method.GetLocation(), namedSourceType, queryResultType));
                 }
             }
             else
@@ -333,7 +275,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
 
                         if (!namedSourceType.CanAssign(namedTargetType, context.SemanticModel.Compilation))
                         {
-                            context.ReportDiagnostic(Diagnostic.Create(PropertyTypeMismatchDescriptor, method.GetLocation(), entry.Name, namedSourceType.ToDisplayString(), namedTargetType.ToDisplayString()));
+                            context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreatePropertyTypeMismatchDiagnostic(method.GetLocation(), entry.Name, namedSourceType, namedTargetType));
                         }
                     }
                 }
@@ -341,12 +283,12 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
                 // report diagnostic
                 if (missingTargets.Count > 0)
                 {
-                    context.ReportDiagnostic(Diagnostic.Create(MissingInResultDescriptor, method.GetLocation(), String.Join("\n", missingTargets)));
+                    context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateMissingColumnsInQueryResultDiagnostic(method.GetLocation(), missingTargets));
                 }
 
                 if (unusedColumns.Count > 0)
                 {
-                    context.ReportDiagnostic(Diagnostic.Create(UnusedColumnsDescriptor, method.GetLocation(), String.Join("\n", unusedColumns)));
+                    context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateUnusedColumnsInQueryResultDiagnostic(method.GetLocation(), unusedColumns));
                 }
             }
         }

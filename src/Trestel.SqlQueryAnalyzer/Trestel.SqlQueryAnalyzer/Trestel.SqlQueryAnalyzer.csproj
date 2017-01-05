@@ -116,6 +116,7 @@
       <Link>Design\DatabaseType.cs</Link>
     </Compile>
     <Compile Include="Analyzers\SqlQueryAnalyzer.cs" />
+    <Compile Include="Analyzers\SqlQueryAnalyzerDiagnostic.cs" />
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="Extensions\EnumerableExtensions.cs" />
     <Compile Include="Extensions\SyntaxNodeExtensions.cs" />

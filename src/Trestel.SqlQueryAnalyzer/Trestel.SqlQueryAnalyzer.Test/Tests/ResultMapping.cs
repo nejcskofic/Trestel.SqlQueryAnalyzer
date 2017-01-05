@@ -78,7 +78,7 @@ namespace Tests
 
             var expected = new DiagnosticResult
             {
-                Id = SqlQueryAnalyzer.UnusedColumnsInQueryResultDiagnosticId,
+                Id = SqlQueryAnalyzerDiagnostic.UnusedColumnsInQueryResultDiagnosticId,
                 Message = "Following columns were found in result set, but are not being used:\nLastName",
                 Severity = DiagnosticSeverity.Error,
                 Locations = new[] { new DiagnosticResultLocation("Test0.cs", 15, 34) }
@@ -117,7 +117,7 @@ namespace Tests
 
             var expected = new DiagnosticResult
             {
-                Id = SqlQueryAnalyzer.MissingColumnsInQueryResultDiagnosticId,
+                Id = SqlQueryAnalyzerDiagnostic.MissingColumnsInQueryResultDiagnosticId,
                 Message = "Following columns were expected in result set, but were not found:\nLastName (string)",
                 Severity = DiagnosticSeverity.Error,
                 Locations = new[] { new DiagnosticResultLocation("Test0.cs", 15, 34) }
@@ -157,7 +157,7 @@ namespace Tests
 
             var expected = new DiagnosticResult
             {
-                Id = SqlQueryAnalyzer.MismatchBetweenPropertyTypesDiagnosticId,
+                Id = SqlQueryAnalyzerDiagnostic.PropertyTypeMismatchDiagnosticId,
                 Message = "For column 'ModifiedDate' expected type 'System.DateTime', but found type 'string'.",
                 Severity = DiagnosticSeverity.Error,
                 Locations = new[] { new DiagnosticResultLocation("Test0.cs", 15, 34) }
@@ -292,7 +292,7 @@ namespace Tests
 
             var expected = new DiagnosticResult
             {
-                Id = SqlQueryAnalyzer.MismatchBetweenTypesDiagnosticId,
+                Id = SqlQueryAnalyzerDiagnostic.TypeMismatchDiagnosticId,
                 Message = "Expected type 'byte[]', but found type 'string'.",
                 Severity = DiagnosticSeverity.Error,
                 Locations = new[] { new DiagnosticResultLocation("Test0.cs", 15, 34) }
@@ -319,7 +319,7 @@ namespace Tests
 
             var expected = new DiagnosticResult
             {
-                Id = SqlQueryAnalyzer.MismatchBetweenTypesDiagnosticId,
+                Id = SqlQueryAnalyzerDiagnostic.TypeMismatchDiagnosticId,
                 Message = "Expected type 'System.Guid', but found type 'string'.",
                 Severity = DiagnosticSeverity.Error,
                 Locations = new[] { new DiagnosticResultLocation("Test0.cs", 15, 34) }
