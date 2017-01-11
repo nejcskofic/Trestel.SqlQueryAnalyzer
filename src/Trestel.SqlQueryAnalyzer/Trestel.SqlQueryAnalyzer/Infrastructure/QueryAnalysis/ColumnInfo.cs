@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 
-namespace Trestel.SqlQueryAnalyzer.Infrastructure.Models
+namespace Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis
 {
     /// <summary>
     /// Immutable class containing column information such as name, type and ordinal position.

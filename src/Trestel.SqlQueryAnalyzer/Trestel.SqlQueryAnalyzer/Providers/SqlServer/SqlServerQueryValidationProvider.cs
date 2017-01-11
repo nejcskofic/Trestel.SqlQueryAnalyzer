@@ -8,8 +8,9 @@ using System.Data.SqlClient;
 using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
+using Trestel.SqlQueryAnalyzer.Common;
 using Trestel.SqlQueryAnalyzer.Infrastructure;
-using Trestel.SqlQueryAnalyzer.Infrastructure.Models;
+using Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis;
 
 namespace Trestel.SqlQueryAnalyzer.Providers.SqlServer
 {
@@ -64,12 +65,12 @@ namespace Trestel.SqlQueryAnalyzer.Providers.SqlServer
         /// Validation result of provided raw query along with expected input parameters and returning result set.
         /// </returns>
         /// <exception cref="System.ArgumentException">Argument null or empty. - rawSqlQuery</exception>
-        public async Task<ValidationResult> ValidateAsync(string rawSqlQuery, CancellationToken cancellationToken)
+        public async Task<Result<ValidatedQuery>> ValidateAsync(string rawSqlQuery, CancellationToken cancellationToken)
         {
             if (String.IsNullOrEmpty(rawSqlQuery)) throw new ArgumentException("Argument null or empty.", nameof(rawSqlQuery));
 
             List<string> errors = new List<string>();
-            ValidatedQuery.Builder builder = new ValidatedQuery.Builder();
+            var builder = ValidatedQuery.New();
             bool hasErrors = false;
 
             using (var connection = new SqlConnection(_connectionString))
@@ -107,11 +108,11 @@ namespace Trestel.SqlQueryAnalyzer.Providers.SqlServer
 
             if (!hasErrors)
             {
-                return ValidationResult.Success(builder.Build());
+                return Result.Success(builder.Build());
             }
             else
             {
-                return ValidationResult.Failure(errors);
+                return Result.Failure<ValidatedQuery>(errors);
             }
         }
 

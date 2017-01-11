@@ -11,10 +11,11 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Trestel.SqlQueryAnalyzer.Common;
 using Trestel.SqlQueryAnalyzer.Extensions;
 using Trestel.SqlQueryAnalyzer.Helpers;
 using Trestel.SqlQueryAnalyzer.Infrastructure;
-using Trestel.SqlQueryAnalyzer.Infrastructure.Models;
+using Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis;
 using Trestel.SqlQueryAnalyzer.Services;
 
 namespace Trestel.SqlQueryAnalyzer.Analyzers
@@ -76,6 +77,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
             AsyncHelper.RunSync(() => AnalyzeSymbolAsync(context));
         }
 
+        // TODO: check behaviour if we have errors in code
         private async Task AnalyzeSymbolAsync(SyntaxNodeAnalysisContext context)
         {
             var node = (InvocationExpressionSyntax)context.Node;
@@ -88,7 +90,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
             if (argumentExpression == null || argumentExpression.Kind() != SyntaxKind.StringLiteralExpression)
             {
                 // raise unsupported diagnostics
-                context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateUnsupportedDiagnostic(node.ArgumentList.Arguments[0].GetLocation()));
+                context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateUnsupportedDiagnostic(node.GetLocation()));
                 return;
             }
 
@@ -105,14 +107,13 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
                 return;
             }
 
-            ValidationResult result = null;
+            Result<ValidatedQuery> result;
             try
             {
                 result = await _cachingService.GetOrAddValidationResultAsync(
                     connectionData,
                     rawSqlString,
                     () => ValidateSqlStringAsync(rawSqlString, connectionData, argumentExpression, context.CancellationToken));
-                if (result == null) return;
             }
             catch (OperationCanceledException)
             {
@@ -141,7 +142,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
                 var methodNode = node.Parent.Parent.Parent as InvocationExpressionSyntax;
                 if (methodNode == null) return;
 
-                AnalyzeMethodCall(methodNode, result.ValidatedQuery, context);
+                AnalyzeMethodCall(methodNode, result.SuccessfulResult, context);
             }
             else
             {
@@ -174,13 +175,16 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
             return true;
         }
 
-        private async Task<ValidationResult> ValidateSqlStringAsync(string rawSqlString, ConnectionStringData connectionData, LiteralExpressionSyntax target, CancellationToken cancellationToken)
+        private async Task<Result<ValidatedQuery>> ValidateSqlStringAsync(string rawSqlString, ConnectionStringData connectionData, LiteralExpressionSyntax target, CancellationToken cancellationToken)
         {
             // check if processing was canceled
             cancellationToken.ThrowIfCancellationRequested();
 
             var provider = _serviceFactory.GetQueryValidationProvider(connectionData);
-            if (provider == null) return null;
+            if (provider == null)
+            {
+                return Result.Failure<ValidatedQuery>($"There is no provider for database type {connectionData.DatabaseType.ToString()} and connection string {connectionData.DatabaseType}.");
+            }
 
             if (provider.EnableThrottling && _cachingService.ContainsOrAddDocumentLocation(target))
             {

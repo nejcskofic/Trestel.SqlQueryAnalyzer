@@ -6,7 +6,6 @@ using NUnit.Framework;
 using TestHelper;
 using Trestel.SqlQueryAnalyzer.Design;
 using Trestel.SqlQueryAnalyzer.Infrastructure;
-using Trestel.SqlQueryAnalyzer.Infrastructure.Models;
 
 namespace Tests
 {

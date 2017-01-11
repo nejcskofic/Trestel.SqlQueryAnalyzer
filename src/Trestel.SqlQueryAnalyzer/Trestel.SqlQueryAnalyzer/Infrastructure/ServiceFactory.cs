@@ -6,7 +6,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using Trestel.SqlQueryAnalyzer.Design;
-using Trestel.SqlQueryAnalyzer.Infrastructure.Models;
 
 namespace Trestel.SqlQueryAnalyzer.Infrastructure
 {

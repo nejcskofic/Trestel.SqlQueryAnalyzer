@@ -6,7 +6,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Trestel.SqlQueryAnalyzer.Design;
-using Trestel.SqlQueryAnalyzer.Infrastructure.Models;
+using Trestel.SqlQueryAnalyzer.Infrastructure;
 
 namespace Trestel.SqlQueryAnalyzer.Extensions
 {

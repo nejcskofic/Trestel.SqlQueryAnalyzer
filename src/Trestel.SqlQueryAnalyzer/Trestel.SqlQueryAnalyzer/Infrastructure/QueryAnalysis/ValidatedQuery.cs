@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 
-namespace Trestel.SqlQueryAnalyzer.Infrastructure.Models
+namespace Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis
 {
     /// <summary>
     /// Contains data for validated query (such as output columns).
@@ -34,16 +34,25 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.Models
         }
 
         /// <summary>
+        /// Creates new <see cref="Builder"/> instance to build this object.
+        /// </summary>
+        /// <returns>New <see cref="Builder"/> instance.</returns>
+        public static Builder New()
+        {
+            return new Builder();
+        }
+
+        /// <summary>
         /// Builder element to build <see cref="ValidatedQuery"/> instance.
         /// </summary>
-        public class Builder
+        public sealed class Builder
         {
             private readonly List<ColumnInfo> _outputColumns;
 
             /// <summary>
             /// Initializes a new instance of the <see cref="Builder"/> class.
             /// </summary>
-            public Builder()
+            internal Builder()
             {
                 _outputColumns = new List<ColumnInfo>();
             }

@@ -3,8 +3,10 @@
 
 using System.Threading.Tasks;
 using NUnit.Framework;
+using Trestel.SqlQueryAnalyzer.Common;
 using Trestel.SqlQueryAnalyzer.Design;
-using Trestel.SqlQueryAnalyzer.Infrastructure.Models;
+using Trestel.SqlQueryAnalyzer.Infrastructure;
+using Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis;
 using Trestel.SqlQueryAnalyzer.Services;
 
 namespace Tests.Tests
@@ -18,9 +20,8 @@ namespace Tests.Tests
             var service = new CachingService();
             var connectionData = new ConnectionStringData("<test>", DatabaseType.SqlServer);
 
-            var result = service.GetOrAddValidationResult(connectionData, "<query>", () => ValidationResult.Failure());
-            Assert.NotNull(result);
-            Assert.AreSame(result, service.GetOrAddValidationResult(connectionData, "<query>", () => ValidationResult.Failure()));
+            var result = service.GetOrAddValidationResult(connectionData, "<query>", () => Result.Failure<ValidatedQuery>("error1"));
+            Assert.AreEqual(result, service.GetOrAddValidationResult(connectionData, "<query>", () => Result.Failure<ValidatedQuery>("error2")));
         }
 
         [Test]
@@ -29,9 +30,8 @@ namespace Tests.Tests
             var service = new CachingService();
             var connectionData = new ConnectionStringData("<test>", DatabaseType.SqlServer);
 
-            var result = await service.GetOrAddValidationResultAsync(connectionData, "<query>", () => Task.FromResult(ValidationResult.Failure()));
-            Assert.NotNull(result);
-            Assert.AreSame(result, await service.GetOrAddValidationResultAsync(connectionData, "<query>", () => Task.FromResult(ValidationResult.Failure())));
+            var result = await service.GetOrAddValidationResultAsync(connectionData, "<query>", () => Task.FromResult(Result.Failure<ValidatedQuery>("error1")));
+            Assert.AreEqual(result, await service.GetOrAddValidationResultAsync(connectionData, "<query>", () => Task.FromResult(Result.Failure<ValidatedQuery>("error2"))));
         }
     }
 }

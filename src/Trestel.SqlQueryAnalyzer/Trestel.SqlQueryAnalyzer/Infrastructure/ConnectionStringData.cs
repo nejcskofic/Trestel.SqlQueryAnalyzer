@@ -4,7 +4,7 @@
 using System;
 using Trestel.SqlQueryAnalyzer.Design;
 
-namespace Trestel.SqlQueryAnalyzer.Infrastructure.Models
+namespace Trestel.SqlQueryAnalyzer.Infrastructure
 {
     /// <summary>
     /// Represents connection string data specified in connection string hint.

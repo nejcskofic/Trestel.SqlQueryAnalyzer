@@ -4,7 +4,9 @@
 using System;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
-using Trestel.SqlQueryAnalyzer.Infrastructure.Models;
+using Trestel.SqlQueryAnalyzer.Common;
+using Trestel.SqlQueryAnalyzer.Infrastructure;
+using Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis;
 
 namespace Trestel.SqlQueryAnalyzer.Services
 {
@@ -13,7 +15,7 @@ namespace Trestel.SqlQueryAnalyzer.Services
     /// </summary>
     public sealed class CachingService
     {
-        private readonly MemoryCache<ValidationResult> _validationResultCache;
+        private readonly MemoryCache<Result<ValidatedQuery>> _validationResultCache;
         private readonly MemoryCache<bool> _documentLocationCache;
 
         /// <summary>
@@ -21,7 +23,7 @@ namespace Trestel.SqlQueryAnalyzer.Services
         /// </summary>
         public CachingService()
         {
-            _validationResultCache = new MemoryCache<ValidationResult>();
+            _validationResultCache = new MemoryCache<Result<ValidatedQuery>>();
             _documentLocationCache = new MemoryCache<bool>();
         }
 
@@ -32,18 +34,18 @@ namespace Trestel.SqlQueryAnalyzer.Services
         /// <param name="rawQuery">The raw query.</param>
         /// <param name="function">The function.</param>
         /// <returns>Cached validation result or one constructed from function.</returns>
-        public ValidationResult GetOrAddValidationResult(ConnectionStringData connectionData, string rawQuery, Func<ValidationResult> function)
+        public Result<ValidatedQuery> GetOrAddValidationResult(ConnectionStringData connectionData, string rawQuery, Func<Result<ValidatedQuery>> function)
         {
             var key = ConstructKey(connectionData, rawQuery);
 
             lock (_validationResultCache)
             {
                 var result = _validationResultCache.GetItem(key);
-                if (result != null) return result;
+                if (result != Result<ValidatedQuery>.Empty) return result;
             }
 
             var newResult = function();
-            if (newResult != null)
+            if (newResult != Result<ValidatedQuery>.Empty)
             {
                 lock (_validationResultCache)
                 {
@@ -61,18 +63,18 @@ namespace Trestel.SqlQueryAnalyzer.Services
         /// <param name="rawQuery">The raw query.</param>
         /// <param name="function">The function.</param>
         /// <returns>Cached validation result or one constructed from function.</returns>
-        public async Task<ValidationResult> GetOrAddValidationResultAsync(ConnectionStringData connectionData, string rawQuery, Func<Task<ValidationResult>> function)
+        public async Task<Result<ValidatedQuery>> GetOrAddValidationResultAsync(ConnectionStringData connectionData, string rawQuery, Func<Task<Result<ValidatedQuery>>> function)
         {
             var key = ConstructKey(connectionData, rawQuery);
 
             lock (_validationResultCache)
             {
                 var result = _validationResultCache.GetItem(key);
-                if (result != null) return result;
+                if (result != Result<ValidatedQuery>.Empty) return result;
             }
 
             var newResult = await function();
-            if (newResult != null)
+            if (newResult != Result<ValidatedQuery>.Empty)
             {
                 lock (_validationResultCache)
                 {

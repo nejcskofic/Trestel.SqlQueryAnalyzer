@@ -1,13 +1,10 @@
 ﻿// Copyright (c) Nejc Skofic. All rights reserved.
 // Licensed under the MIT license. See LICENSE.txt file in the project root for full license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Trestel.SqlQueryAnalyzer.Infrastructure.Models;
+using Trestel.SqlQueryAnalyzer.Common;
+using Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis;
 
 namespace Trestel.SqlQueryAnalyzer.Infrastructure
 {
@@ -34,6 +31,6 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure
         /// <param name="rawSqlQuery">The raw SQL query.</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Validation result of provided raw query along with expected input parameters and returning result set.</returns>
-        Task<ValidationResult> ValidateAsync(string rawSqlQuery, CancellationToken cancellationToken);
+        Task<Result<ValidatedQuery>> ValidateAsync(string rawSqlQuery, CancellationToken cancellationToken);
     }
 }

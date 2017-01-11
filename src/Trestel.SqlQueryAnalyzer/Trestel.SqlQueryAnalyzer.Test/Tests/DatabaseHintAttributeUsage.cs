@@ -5,9 +5,10 @@ using Microsoft.CodeAnalysis;
 using NUnit.Framework;
 using TestHelper;
 using Trestel.SqlQueryAnalyzer.Analyzers;
+using Trestel.SqlQueryAnalyzer.Common;
 using Trestel.SqlQueryAnalyzer.Design;
 using Trestel.SqlQueryAnalyzer.Infrastructure;
-using Trestel.SqlQueryAnalyzer.Infrastructure.Models;
+using Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis;
 
 namespace Tests
 {
@@ -41,7 +42,7 @@ namespace TestNamespace
             var mockupValidationProvider = new MockupValidationProvider();
             mockupValidationProvider.AddExpectedResult(
                 "SELECT BusinessEntityID, Title, FirstName, LastName FROM Person.Person",
-                ValidationResult.Success(new ValidatedQuery.Builder().Build()));
+                Result.Success(ValidatedQuery.New().Build()));
 
             var factory = new ServiceFactory().RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection));
 
@@ -78,7 +79,7 @@ namespace TestNamespace
             var mockupValidationProvider = new MockupValidationProvider();
             mockupValidationProvider.AddExpectedResult(
                 "SELECT BusinessEntityID, Title, FirstName, LastName FROM Person.Person",
-                ValidationResult.Success(new ValidatedQuery.Builder().Build()));
+                Result.Success(ValidatedQuery.New().Build()));
 
             var factory = new ServiceFactory().RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection));
 
@@ -114,7 +115,7 @@ namespace TestNamespace
             var mockupValidationProvider = new MockupValidationProvider();
             mockupValidationProvider.AddExpectedResult(
                 "SELECT BusinessEntityID, Title, FirstName, LastName FROM Person.Person",
-                ValidationResult.Success(new ValidatedQuery.Builder().Build()));
+                Result.Success(ValidatedQuery.New().Build()));
 
             var factory = new ServiceFactory().RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection));
 
@@ -148,7 +149,7 @@ namespace TestNamespace
             var mockupValidationProvider = new MockupValidationProvider();
             mockupValidationProvider.AddExpectedResult(
                 "SELECT BusinessEntityID, Title, FirstName, LastName FROM Person.Person",
-                ValidationResult.Success(new ValidatedQuery.Builder().Build()));
+                Result.Success(ValidatedQuery.New().Build()));
 
             var factory = new ServiceFactory().RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection));
 
@@ -190,7 +191,7 @@ namespace TestNamespace
             var mockupValidationProvider = new MockupValidationProvider();
             mockupValidationProvider.AddExpectedResult(
                 "SELECT BusinessEntityID, Title, FirstName, LastName FROM Person.Person",
-                ValidationResult.Success(new ValidatedQuery.Builder().Build()));
+                Result.Success(ValidatedQuery.New().Build()));
 
             var factory = new ServiceFactory().RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection));
 

@@ -7,9 +7,10 @@ using NUnit.Framework;
 using Templates;
 using TestHelper;
 using Trestel.SqlQueryAnalyzer.Analyzers;
+using Trestel.SqlQueryAnalyzer.Common;
 using Trestel.SqlQueryAnalyzer.Design;
 using Trestel.SqlQueryAnalyzer.Infrastructure;
-using Trestel.SqlQueryAnalyzer.Infrastructure.Models;
+using Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis;
 
 namespace Tests
 {
@@ -35,8 +36,8 @@ namespace Tests
             var mockupValidationProvider = new MockupValidationProvider();
             mockupValidationProvider.AddExpectedResult(
                 query,
-                ValidationResult.Success(
-                    new ValidatedQuery.Builder()
+                Result.Success(
+                    ValidatedQuery.New()
                         .AddOutputColumn("BusinessEntityID", typeof(int))
                         .AddOutputColumn("Title", typeof(string))
                         .AddOutputColumn("FirstName", typeof(string))
@@ -66,8 +67,8 @@ namespace Tests
             var mockupValidationProvider = new MockupValidationProvider();
             mockupValidationProvider.AddExpectedResult(
                 query,
-                ValidationResult.Success(
-                    new ValidatedQuery.Builder()
+                Result.Success(
+                    ValidatedQuery.New()
                         .AddOutputColumn("BusinessEntityID", typeof(int))
                         .AddOutputColumn("Title", typeof(string))
                         .AddOutputColumn("FirstName", typeof(string))
@@ -106,8 +107,8 @@ namespace Tests
             var mockupValidationProvider = new MockupValidationProvider();
             mockupValidationProvider.AddExpectedResult(
                 query,
-                ValidationResult.Success(
-                    new ValidatedQuery.Builder()
+                Result.Success(
+                    ValidatedQuery.New()
                         .AddOutputColumn("BusinessEntityID", typeof(int))
                         .AddOutputColumn("Title", typeof(string))
                         .AddOutputColumn("FirstName", typeof(string))
@@ -145,8 +146,8 @@ namespace Tests
             var mockupValidationProvider = new MockupValidationProvider();
             mockupValidationProvider.AddExpectedResult(
                 query,
-                ValidationResult.Success(
-                    new ValidatedQuery.Builder()
+                Result.Success(
+                    ValidatedQuery.New()
                         .AddOutputColumn("BusinessEntityID", typeof(int))
                         .AddOutputColumn("Title", typeof(string))
                         .AddOutputColumn("FirstName", typeof(string))
@@ -185,8 +186,8 @@ namespace Tests
             var mockupValidationProvider = new MockupValidationProvider();
             mockupValidationProvider.AddExpectedResult(
                 query,
-                ValidationResult.Success(
-                    new ValidatedQuery.Builder()
+                Result.Success(
+                    ValidatedQuery.New()
                         .AddOutputColumn("BusinessEntityID", typeof(int))
                         .AddOutputColumn("Title", typeof(string))
                         .AddOutputColumn("FirstName", typeof(string))
@@ -207,8 +208,8 @@ namespace Tests
             var mockupValidationProvider = new MockupValidationProvider();
             mockupValidationProvider.AddExpectedResult(
                 query,
-                ValidationResult.Success(
-                    new ValidatedQuery.Builder()
+                Result.Success(
+                    ValidatedQuery.New()
                         .AddOutputColumn("rowguid", typeof(Guid))
                         .Build()));
 
@@ -226,8 +227,8 @@ namespace Tests
             var mockupValidationProvider = new MockupValidationProvider();
             mockupValidationProvider.AddExpectedResult(
                 query,
-                ValidationResult.Success(
-                    new ValidatedQuery.Builder()
+                Result.Success(
+                    ValidatedQuery.New()
                         .AddOutputColumn("rowguid", typeof(Guid))
                         .Build()));
 
@@ -245,8 +246,8 @@ namespace Tests
             var mockupValidationProvider = new MockupValidationProvider();
             mockupValidationProvider.AddExpectedResult(
                 query,
-                ValidationResult.Success(
-                    new ValidatedQuery.Builder()
+                Result.Success(
+                    ValidatedQuery.New()
                         .AddOutputColumn("rowguid", typeof(Guid?))
                         .Build()));
 
@@ -264,8 +265,8 @@ namespace Tests
             var mockupValidationProvider = new MockupValidationProvider();
             mockupValidationProvider.AddExpectedResult(
                 query,
-                ValidationResult.Success(
-                    new ValidatedQuery.Builder()
+                Result.Success(
+                    ValidatedQuery.New()
                         .AddOutputColumn("RecordVersion", typeof(byte[]))
                         .Build()));
 
@@ -283,8 +284,8 @@ namespace Tests
             var mockupValidationProvider = new MockupValidationProvider();
             mockupValidationProvider.AddExpectedResult(
                 query,
-                ValidationResult.Success(
-                    new ValidatedQuery.Builder()
+                Result.Success(
+                    ValidatedQuery.New()
                         .AddOutputColumn("RecordVersion", typeof(byte[]))
                         .Build()));
 
@@ -310,8 +311,8 @@ namespace Tests
             var mockupValidationProvider = new MockupValidationProvider();
             mockupValidationProvider.AddExpectedResult(
                 query,
-                ValidationResult.Success(
-                    new ValidatedQuery.Builder()
+                Result.Success(
+                    ValidatedQuery.New()
                         .AddOutputColumn("rowguid", typeof(Guid))
                         .Build()));
 
