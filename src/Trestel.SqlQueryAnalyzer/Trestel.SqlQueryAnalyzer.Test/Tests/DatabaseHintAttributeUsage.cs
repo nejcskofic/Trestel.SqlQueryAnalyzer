@@ -44,7 +44,9 @@ namespace TestNamespace
                 "SELECT BusinessEntityID, Title, FirstName, LastName FROM Person.Person",
                 Result.Success(ValidatedQuery.New().Build()));
 
-            var factory = new ServiceFactory().RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection));
+            var factory = ServiceFactory.New()
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .Build();
 
             VerifyCSharpDiagnostic(factory, test);
 
@@ -81,7 +83,9 @@ namespace TestNamespace
                 "SELECT BusinessEntityID, Title, FirstName, LastName FROM Person.Person",
                 Result.Success(ValidatedQuery.New().Build()));
 
-            var factory = new ServiceFactory().RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection));
+            var factory = ServiceFactory.New()
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .Build();
 
             VerifyCSharpDiagnostic(factory, test);
 
@@ -117,7 +121,9 @@ namespace TestNamespace
                 "SELECT BusinessEntityID, Title, FirstName, LastName FROM Person.Person",
                 Result.Success(ValidatedQuery.New().Build()));
 
-            var factory = new ServiceFactory().RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection));
+            var factory = ServiceFactory.New()
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .Build();
 
             VerifyCSharpDiagnostic(factory, test);
 
@@ -151,7 +157,9 @@ namespace TestNamespace
                 "SELECT BusinessEntityID, Title, FirstName, LastName FROM Person.Person",
                 Result.Success(ValidatedQuery.New().Build()));
 
-            var factory = new ServiceFactory().RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection));
+            var factory = ServiceFactory.New()
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .Build();
 
             var expected = new DiagnosticResult
             {
@@ -193,7 +201,9 @@ namespace TestNamespace
                 "SELECT BusinessEntityID, Title, FirstName, LastName FROM Person.Person",
                 Result.Success(ValidatedQuery.New().Build()));
 
-            var factory = new ServiceFactory().RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection));
+            var factory = ServiceFactory.New()
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .Build();
 
             VerifyCSharpDiagnostic(factory, test);
 

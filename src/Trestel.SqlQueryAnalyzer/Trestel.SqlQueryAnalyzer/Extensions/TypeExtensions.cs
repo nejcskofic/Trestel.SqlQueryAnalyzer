@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE.txt file in the project root for full license information.
 
 using System;
+using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
@@ -96,6 +97,36 @@ namespace Trestel.SqlQueryAnalyzer.Extensions
         {
             var conversionStatus = compilation.ClassifyConversion(source, target);
             return conversionStatus.Exists && !conversionStatus.IsExplicit;
+        }
+
+        /// <summary>
+        /// Get the properties with public setter.
+        /// </summary>
+        /// <param name="symbol">The symbol.</param>
+        /// <returns>Enumerable of properties with public setter.</returns>
+        public static IEnumerable<IPropertySymbol> GetPropertiesWithPublicSetter(this INamedTypeSymbol symbol)
+        {
+            if (symbol == null) yield break;
+
+            var members = symbol.GetMembers();
+            for (int i = 0; i < members.Length; i++)
+            {
+                var m = members[i];
+                if (m.Kind != SymbolKind.Property) continue;
+                var prop = (IPropertySymbol)m;
+
+                if (prop.IsStatic || prop.IsIndexer || prop.DeclaredAccessibility != Accessibility.Public)
+                {
+                    continue;
+                }
+
+                if (prop.SetMethod == null || prop.SetMethod.DeclaredAccessibility != Accessibility.Public)
+                {
+                    continue;
+                }
+
+                yield return prop;
+            }
         }
 
         private static ITypeSymbol ConvertFromRuntimeTypeInternal(Type type, Compilation compilation)

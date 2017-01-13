@@ -15,6 +15,7 @@ using Trestel.SqlQueryAnalyzer.Common;
 using Trestel.SqlQueryAnalyzer.Extensions;
 using Trestel.SqlQueryAnalyzer.Helpers;
 using Trestel.SqlQueryAnalyzer.Infrastructure;
+using Trestel.SqlQueryAnalyzer.Infrastructure.CallSiteAnalysis;
 using Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis;
 using Trestel.SqlQueryAnalyzer.Services;
 
@@ -23,7 +24,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
     /// <summary>
     /// Analyzer for checking raw SQL queries for syntactic correctness, parameter usage and result set mapping.
     /// </summary>
-    /// <seealso cref="Microsoft.CodeAnalysis.Diagnostics.DiagnosticAnalyzer" />
+    /// <seealso cref="DiagnosticAnalyzer" />
     [DiagnosticAnalyzer(LanguageNames.CSharp)]
     public class SqlQueryAnalyzer : DiagnosticAnalyzer
     {
@@ -35,7 +36,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
         /// </summary>
         public SqlQueryAnalyzer()
         {
-            _serviceFactory = new ServiceFactory().BuildUp();
+            _serviceFactory = ServiceFactory.New().AddServices().Build();
             _cachingService = new CachingService();
         }
 
@@ -107,6 +108,29 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
                 return;
             }
 
+            // perform local analyis
+            var methodNode = node.Parent.Parent.Parent as InvocationExpressionSyntax; // InvocationExpressionSyntax -> ArgumentSyntax -> ArgumentListSyntax -> InvocationExpressionSyntax
+            Result<NormalizedCallSite> callSiteAnalysisResult = Result<NormalizedCallSite>.Empty;
+            if (methodNode != null)
+            {
+                var callSiteContext = new CallSiteContext(methodNode, context.SemanticModel, context.CancellationToken);
+                var callSiteAnalyzer = _serviceFactory.GetCallSiteAnalyzer(callSiteContext);
+                if (callSiteAnalyzer != null)
+                {
+                    callSiteAnalysisResult = callSiteAnalyzer.AnalyzeCallSite(callSiteContext);
+                    if (!callSiteAnalysisResult.IsSuccess)
+                    {
+                        // TODO: if failure, report failure diagnostic and abort
+                        return;
+                    }
+
+                    if (!String.IsNullOrEmpty(callSiteAnalysisResult.SuccessfulResult.NormalizedSqlQuery))
+                    {
+                        rawSqlString = callSiteAnalysisResult.SuccessfulResult.NormalizedSqlQuery;
+                    }
+                }
+            }
+
             Result<ValidatedQuery> result;
             try
             {
@@ -128,25 +152,23 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
 
             context.CancellationToken.ThrowIfCancellationRequested();
 
-            if (result.IsSuccess)
-            {
-                // TODO -> validate success
-                // TODO refactor
-                if (!(node.Parent is ArgumentSyntax))
-                {
-                    // if this is not directly used as argument syntax, any analysis is not supported
-                    // TODO Flow analysis?
-                    return;
-                }
-
-                var methodNode = node.Parent.Parent.Parent as InvocationExpressionSyntax;
-                if (methodNode == null) return;
-
-                AnalyzeMethodCall(methodNode, result.SuccessfulResult, context);
-            }
-            else
+            if (!result.IsSuccess)
             {
                 context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateErrorsInSqlQueryDiagnostic(node.GetLocation(), result.Errors));
+                return;
+            }
+
+            if (callSiteAnalysisResult.IsSuccess)
+            {
+                if (callSiteAnalysisResult.SuccessfulResult.CheckParameters)
+                {
+                    CheckParameterMapping(callSiteAnalysisResult.SuccessfulResult, result.SuccessfulResult, methodNode, context);
+                }
+
+                if (callSiteAnalysisResult.SuccessfulResult.CheckResult)
+                {
+                    CheckResultMapping(callSiteAnalysisResult.SuccessfulResult, result.SuccessfulResult, methodNode, context);
+                }
             }
         }
 
@@ -196,122 +218,71 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
             return result;
         }
 
-        private static void AnalyzeMethodCall(InvocationExpressionSyntax method, ValidatedQuery validatedQueryInfo, SyntaxNodeAnalysisContext context)
+        private static void CheckParameterMapping(NormalizedCallSite callSite, ValidatedQuery validatedQuery, InvocationExpressionSyntax targetNode, SyntaxNodeAnalysisContext context)
         {
-            var methodSymbol = context.SemanticModel.GetSymbolInfo(method).Symbol as IMethodSymbol;
-            if (methodSymbol == null)
+        }
+
+        private static void CheckResultMapping(NormalizedCallSite callSite, ValidatedQuery validatedQuery, InvocationExpressionSyntax targetNode, SyntaxNodeAnalysisContext context)
+        {
+            // special case if we are directly mapping to primitive type
+            if (callSite.ExpectedFields.Length == 1 && callSite.ExpectedFields[0].IsAnonymous)
             {
-                // try if method is locally declared
-                methodSymbol = context.SemanticModel.GetDeclaredSymbol(method) as IMethodSymbol;
-            }
+                var fieldType = callSite.ExpectedFields[0].FieldType;
+                if (validatedQuery.OutputColumns.Length != 1)
+                {
+                    context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateExpectedSingleColumnInQueryResultDiagnostic(targetNode.GetLocation(), fieldType));
+                    return;
+                }
 
-            if (methodSymbol == null) return;
+                var columnType = validatedQuery.OutputColumns[0].Type.ConvertFromRuntimeType(context.SemanticModel.Compilation);
+                if (columnType != null && !columnType.CanAssign(fieldType, context.SemanticModel.Compilation))
+                {
+                    context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateTypeMismatchDiagnostic(targetNode.GetLocation(), columnType, fieldType));
+                }
 
-            // get return type
-            var returnType = methodSymbol.ReturnType as INamedTypeSymbol;
-            if (returnType == null || returnType.TypeKind == TypeKind.Error) return;
-
-            ITypeSymbol queryResultType = null;
-
-            // two options: 1. IEnumerable<T> or 2. T
-            if (returnType.SpecialType == SpecialType.System_Collections_IEnumerable || returnType.AllInterfaces.Any(x => x.SpecialType == SpecialType.System_Collections_IEnumerable))
-            {
-                // TODO multimapping?
-                if (!returnType.IsGenericType || returnType.TypeParameters.Length != 1 || returnType.TypeArguments.Length != 1) return;
-
-                queryResultType = returnType.TypeArguments[0];
-            }
-            else
-            {
-                queryResultType = returnType;
-            }
-
-            if (queryResultType.TypeKind == TypeKind.Error) return;
-
-            if (queryResultType.Name == "dynamic")
-            {
-                // TODO report dynamic
                 return;
             }
 
-            // TODO also report that on the one side we have basic type and on the other we have multiple columns
-            if (validatedQueryInfo.OutputColumns.Count == 1 && queryResultType.IsBasicType())
+            var unusedColumns = new List<ColumnInfo>(validatedQuery.OutputColumns);
+            var unusedFields = new List<ResultField>();
+
+            for (int i = 0; i < callSite.ExpectedFields.Length; i++)
             {
-                var namedSourceType = validatedQueryInfo.OutputColumns[0].Type.ConvertFromRuntimeType(context.SemanticModel.Compilation);
-                if (namedSourceType != null && !namedSourceType.CanAssign(queryResultType, context.SemanticModel.Compilation))
+                var field = callSite.ExpectedFields[i];
+                bool found = false;
+                for (int j = 0; j < validatedQuery.OutputColumns.Length; j++)
                 {
-                    context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateTypeMismatchDiagnostic(method.GetLocation(), namedSourceType, queryResultType));
+                    var column = validatedQuery.OutputColumns[j];
+                    if (field.FieldName == column.Name)
+                    {
+                        found = true;
+                        unusedColumns.Remove(column);
+
+                        var columnType = column.Type.ConvertFromRuntimeType(context.SemanticModel.Compilation);
+                        if (columnType != null && !columnType.CanAssign(field.FieldType, context.SemanticModel.Compilation))
+                        {
+                            context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreatePropertyTypeMismatchDiagnostic(targetNode.GetLocation(), column.Name, columnType, field.FieldType));
+                        }
+
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    unusedFields.Add(field);
                 }
             }
-            else
+
+            // report diagnostic
+            if (unusedFields.Count > 0)
             {
-                var namedResultType = queryResultType as INamedTypeSymbol;
-                if (namedResultType == null) return;
-
-                // normal user defined type
-                var missingTargets = new List<string>();
-                var unusedColumns = new List<string>();
-                foreach (var entry in validatedQueryInfo.OutputColumns.FullJoin(LoadResultTypeProperties(namedResultType), x => x.Name, x => x.Item1, (x, y) => new { Name = x?.Name ?? y?.Item1, SourceType = x?.Type, TargetType = y?.Item2 }))
-                {
-                    if (entry.SourceType == null)
-                    {
-                        missingTargets.Add(entry.Name + " (" + entry.TargetType.ToDisplayString() + ")");
-                    }
-                    else if (entry.TargetType == null)
-                    {
-                        unusedColumns.Add(entry.Name);
-                    }
-                    else
-                    {
-                        var namedTargetType = entry.TargetType as INamedTypeSymbol;
-                        if (namedResultType == null)
-                        {
-                            // type is dynamic?
-                            continue;
-                        }
-
-                        var namedSourceType = entry.SourceType.ConvertFromRuntimeType(context.SemanticModel.Compilation);
-                        if (namedSourceType == null)
-                        {
-                            // convertion failed?
-                            continue;
-                        }
-
-                        if (!namedSourceType.CanAssign(namedTargetType, context.SemanticModel.Compilation))
-                        {
-                            context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreatePropertyTypeMismatchDiagnostic(method.GetLocation(), entry.Name, namedSourceType, namedTargetType));
-                        }
-                    }
-                }
-
-                // report diagnostic
-                if (missingTargets.Count > 0)
-                {
-                    context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateMissingColumnsInQueryResultDiagnostic(method.GetLocation(), missingTargets));
-                }
-
-                if (unusedColumns.Count > 0)
-                {
-                    context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateUnusedColumnsInQueryResultDiagnostic(method.GetLocation(), unusedColumns));
-                }
+                context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateMissingColumnsInQueryResultDiagnostic(targetNode.GetLocation(), unusedFields));
             }
-        }
 
-        private static IEnumerable<Tuple<string, ITypeSymbol>> LoadResultTypeProperties(INamedTypeSymbol symbol)
-        {
-            foreach (IPropertySymbol prop in symbol.GetMembers().Where(x => x.Kind == SymbolKind.Property))
+            if (unusedColumns.Count > 0)
             {
-                if (prop.IsStatic || prop.IsIndexer || prop.DeclaredAccessibility != Accessibility.Public)
-                {
-                    continue;
-                }
-
-                if (prop.SetMethod == null || prop.SetMethod.DeclaredAccessibility != Accessibility.Public)
-                {
-                    continue;
-                }
-
-                yield return Tuple.Create(prop.Name, prop.Type);
+                context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateUnusedColumnsInQueryResultDiagnostic(targetNode.GetLocation(), unusedColumns));
             }
         }
     }

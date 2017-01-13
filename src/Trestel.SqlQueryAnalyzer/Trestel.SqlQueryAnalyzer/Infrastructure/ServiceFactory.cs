@@ -6,6 +6,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using Trestel.SqlQueryAnalyzer.Design;
+using Trestel.SqlQueryAnalyzer.Infrastructure.CallSiteAnalysis;
 
 namespace Trestel.SqlQueryAnalyzer.Infrastructure
 {
@@ -14,33 +15,40 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure
     /// </summary>
     public class ServiceFactory
     {
+        private readonly ICallSiteAnalyzer[] _callSiteAnalyzers;
         private readonly Func<string, IQueryValidationProvider>[] _registeredFactories;
         private readonly IDictionary<ConnectionStringData, IQueryValidationProvider> _queryValidationProviderCache;
 
         private volatile CachedEntry _cachedEntry;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="ServiceFactory"/> class.
+        /// Initializes a new instance of the <see cref="ServiceFactory" /> class.
         /// </summary>
-        public ServiceFactory()
+        /// <param name="callSiteAnalyzers">The call site analyzer.</param>
+        /// <param name="validationFactories">The validation factories.</param>
+        private ServiceFactory(ICallSiteAnalyzer[] callSiteAnalyzers, Func<string, IQueryValidationProvider>[] validationFactories)
         {
-            _registeredFactories = new Func<string, IQueryValidationProvider>[Enum.GetValues(typeof(DatabaseType)).Length];
+            _callSiteAnalyzers = callSiteAnalyzers;
+            _registeredFactories = validationFactories;
             _queryValidationProviderCache = new ConcurrentDictionary<ConnectionStringData, IQueryValidationProvider>();
         }
 
         /// <summary>
-        /// Registers the query validation provider factory.
+        /// Gets the call site analyzer.
         /// </summary>
-        /// <param name="type">The type.</param>
-        /// <param name="factory">The factory.</param>
-        /// <returns>This instance</returns>
-        /// <exception cref="System.ArgumentNullException">factory</exception>
-        public ServiceFactory RegisterQueryValidationProviderFactory(DatabaseType type, Func<string, IQueryValidationProvider> factory)
+        /// <param name="context">The context.</param>
+        /// <returns>Call site analyzer instance of null if no matching analyzer was found.</returns>
+        public ICallSiteAnalyzer GetCallSiteAnalyzer(CallSiteContext context)
         {
-            if (factory == null) throw new ArgumentNullException(nameof(factory));
+            if (context == null) return null;
 
-            _registeredFactories[(int)type] = factory;
-            return this;
+            for (int i = 0; i < _callSiteAnalyzers.Length; i++)
+            {
+                var analyzer = _callSiteAnalyzers[i];
+                if (analyzer.CanAnalyzeCallSite(context)) return analyzer;
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -74,6 +82,74 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure
             }
 
             return provider;
+        }
+
+        /// <summary>
+        /// Creates new instance of <see cref="Builder"/> which is used to build <see cref="ServiceFactory"/>.
+        /// </summary>
+        /// <returns>New instance of <see cref="Builder"/></returns>
+        public static Builder New()
+        {
+            return new Builder();
+        }
+
+        /// <summary>
+        /// Builder class for creating new <see cref="ServiceFactory"/>.
+        /// </summary>
+        public sealed class Builder
+        {
+            private readonly Func<string, IQueryValidationProvider>[] _registeredFactories;
+            private readonly List<ICallSiteAnalyzer> _callSiteAnalyzers;
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="Builder"/> class.
+            /// </summary>
+            internal Builder()
+            {
+                _registeredFactories = new Func<string, IQueryValidationProvider>[Enum.GetValues(typeof(DatabaseType)).Length];
+                _callSiteAnalyzers = new List<ICallSiteAnalyzer>();
+            }
+
+            /// <summary>
+            /// Registers the query validation provider factory.
+            /// </summary>
+            /// <param name="type">The type.</param>
+            /// <param name="factory">The factory.</param>
+            /// <returns>This instance</returns>
+            /// <exception cref="System.ArgumentNullException">factory</exception>
+            public Builder RegisterQueryValidationProviderFactory(DatabaseType type, Func<string, IQueryValidationProvider> factory)
+            {
+                if (factory == null) throw new ArgumentNullException(nameof(factory));
+
+                _registeredFactories[(int)type] = factory;
+                return this;
+            }
+
+            /// <summary>
+            /// Registers the call site analyzer instance. Order of calls is important since checks will be performed sequentially.
+            /// Because of this, default/fallback instance should be registered last.
+            /// </summary>
+            /// <param name="callSiteAnalyzer">The call site analyzer.</param>
+            /// <returns>This instance</returns>
+            /// <exception cref="System.ArgumentNullException">callSiteAnalyzer</exception>
+            public Builder RegisterCallSiteAnalyzerInstance(ICallSiteAnalyzer callSiteAnalyzer)
+            {
+                if (callSiteAnalyzer == null) throw new ArgumentNullException(nameof(callSiteAnalyzer));
+
+                _callSiteAnalyzers.Add(callSiteAnalyzer);
+                return this;
+            }
+
+            /// <summary>
+            /// Creates new <see cref="ServiceFactory"/> instance.
+            /// </summary>
+            /// <returns>New <see cref="ServiceFactory"/> instance.</returns>
+            public ServiceFactory Build()
+            {
+                return new ServiceFactory(
+                    _callSiteAnalyzers.ToArray(),
+                    (Func<string, IQueryValidationProvider>[])_registeredFactories.Clone());
+            }
         }
 
         private sealed class CachedEntry

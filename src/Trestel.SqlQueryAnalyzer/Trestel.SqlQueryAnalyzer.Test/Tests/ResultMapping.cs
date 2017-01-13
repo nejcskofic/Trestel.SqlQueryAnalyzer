@@ -7,6 +7,7 @@ using NUnit.Framework;
 using Templates;
 using TestHelper;
 using Trestel.SqlQueryAnalyzer.Analyzers;
+using Trestel.SqlQueryAnalyzer.CallSiteAnalyzers;
 using Trestel.SqlQueryAnalyzer.Common;
 using Trestel.SqlQueryAnalyzer.Design;
 using Trestel.SqlQueryAnalyzer.Infrastructure;
@@ -44,7 +45,9 @@ namespace Tests
                         .AddOutputColumn("LastName", typeof(string))
                         .AddOutputColumn("ModifiedDate", typeof(DateTime)).Build()));
 
-            var factory = new ServiceFactory().RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection));
+            var factory = ServiceFactory.New()
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .Build();
 
             VerifyCSharpDiagnostic(factory, source);
         }
@@ -75,7 +78,10 @@ namespace Tests
                         .AddOutputColumn("LastName", typeof(string))
                         .AddOutputColumn("ModifiedDate", typeof(DateTime)).Build()));
 
-            var factory = new ServiceFactory().RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection));
+            var factory = ServiceFactory.New()
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterCallSiteAnalyzerInstance(new GenericAnalyzer())
+                .Build();
 
             var expected = new DiagnosticResult
             {
@@ -114,7 +120,10 @@ namespace Tests
                         .AddOutputColumn("FirstName", typeof(string))
                         .AddOutputColumn("ModifiedDate", typeof(DateTime)).Build()));
 
-            var factory = new ServiceFactory().RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection));
+            var factory = ServiceFactory.New()
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterCallSiteAnalyzerInstance(new GenericAnalyzer())
+                .Build();
 
             var expected = new DiagnosticResult
             {
@@ -154,7 +163,10 @@ namespace Tests
                         .AddOutputColumn("LastName", typeof(string))
                         .AddOutputColumn("ModifiedDate", typeof(DateTime)).Build()));
 
-            var factory = new ServiceFactory().RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection));
+            var factory = ServiceFactory.New()
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterCallSiteAnalyzerInstance(new GenericAnalyzer())
+                .Build();
 
             var expected = new DiagnosticResult
             {
@@ -194,7 +206,9 @@ namespace Tests
                         .AddOutputColumn("LastName", typeof(string))
                         .AddOutputColumn("ModifiedDate", typeof(DateTime)).Build()));
 
-            var factory = new ServiceFactory().RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection));
+            var factory = ServiceFactory.New()
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .Build();
 
             VerifyCSharpDiagnostic(factory, test);
         }
@@ -213,7 +227,9 @@ namespace Tests
                         .AddOutputColumn("rowguid", typeof(Guid))
                         .Build()));
 
-            var factory = new ServiceFactory().RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection));
+            var factory = ServiceFactory.New()
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .Build();
 
             VerifyCSharpDiagnostic(factory, source);
         }
@@ -232,7 +248,9 @@ namespace Tests
                         .AddOutputColumn("rowguid", typeof(Guid))
                         .Build()));
 
-            var factory = new ServiceFactory().RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection));
+            var factory = ServiceFactory.New()
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .Build();
 
             VerifyCSharpDiagnostic(factory, source);
         }
@@ -251,7 +269,9 @@ namespace Tests
                         .AddOutputColumn("rowguid", typeof(Guid?))
                         .Build()));
 
-            var factory = new ServiceFactory().RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection));
+            var factory = ServiceFactory.New()
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .Build();
 
             VerifyCSharpDiagnostic(factory, source);
         }
@@ -270,7 +290,9 @@ namespace Tests
                         .AddOutputColumn("RecordVersion", typeof(byte[]))
                         .Build()));
 
-            var factory = new ServiceFactory().RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection));
+            var factory = ServiceFactory.New()
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .Build();
 
             VerifyCSharpDiagnostic(factory, source);
         }
@@ -289,7 +311,10 @@ namespace Tests
                         .AddOutputColumn("RecordVersion", typeof(byte[]))
                         .Build()));
 
-            var factory = new ServiceFactory().RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection));
+            var factory = ServiceFactory.New()
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterCallSiteAnalyzerInstance(new GenericAnalyzer())
+                .Build();
 
             var expected = new DiagnosticResult
             {
@@ -316,7 +341,10 @@ namespace Tests
                         .AddOutputColumn("rowguid", typeof(Guid))
                         .Build()));
 
-            var factory = new ServiceFactory().RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection));
+            var factory = ServiceFactory.New()
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterCallSiteAnalyzerInstance(new GenericAnalyzer())
+                .Build();
 
             var expected = new DiagnosticResult
             {

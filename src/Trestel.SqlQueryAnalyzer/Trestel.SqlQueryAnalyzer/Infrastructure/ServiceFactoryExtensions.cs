@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Trestel.SqlQueryAnalyzer.CallSiteAnalyzers;
 using Trestel.SqlQueryAnalyzer.Design;
 using Trestel.SqlQueryAnalyzer.Providers.SqlServer;
 
@@ -17,16 +18,19 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure
     internal static class ServiceFactoryExtensions
     {
         /// <summary>
-        /// Builds up service factory. Responsible for initializing all services that analyzer is using.
+        /// Adds required services to factory builder. Responsible for initializing all services that analyzer is using.
         /// </summary>
-        /// <param name="serviceFactory">The service factory.</param>
+        /// <param name="builder">The service factory builder.</param>
         /// <returns>Same instance as is received as parameter.</returns>
-        public static ServiceFactory BuildUp(this ServiceFactory serviceFactory)
+        public static ServiceFactory.Builder AddServices(this ServiceFactory.Builder builder)
         {
-            if (serviceFactory == null) return null;
+            if (builder == null) return null;
 
-            serviceFactory.RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (string connectionString) => new SqlServerQueryValidationProvider(connectionString));
-            return serviceFactory;
+            builder.RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (string connectionString) => new SqlServerQueryValidationProvider(connectionString));
+
+            builder.RegisterCallSiteAnalyzerInstance(new GenericAnalyzer());
+
+            return builder;
         }
     }
 }

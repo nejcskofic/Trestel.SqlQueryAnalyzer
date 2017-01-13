@@ -5,7 +5,10 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Text;
 using Microsoft.CodeAnalysis;
+using Trestel.SqlQueryAnalyzer.Infrastructure.CallSiteAnalysis;
+using Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis;
 
 namespace Trestel.SqlQueryAnalyzer.Analyzers
 {
@@ -57,9 +60,14 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
         public const string TypeMismatchDiagnosticId = "SQL0007";
 
         /// <summary>
+        /// The expected single column in query result diagnostic identifier
+        /// </summary>
+        public const string ExpectedSingleColumnInQueryResultDiagnosticId = "SQL0008";
+
+        /// <summary>
         /// The missing database hint attribute diagnostic identifier
         /// </summary>
-        public const string MissingDatabaseHintAttributeDiagnosticId = "SQL0008";
+        public const string MissingDatabaseHintAttributeDiagnosticId = "SQL0009";
 
         private static readonly DiagnosticDescriptor FailedToValidateDescriptor = new DiagnosticDescriptor(
             FailedToValidateDiagnosticId,
@@ -131,6 +139,16 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
             "Property type should match column type.",
             null);
 
+        private static readonly DiagnosticDescriptor ExpectedSingleColumnInQueryResultDescriptor = new DiagnosticDescriptor(
+            ExpectedSingleColumnInQueryResultDiagnosticId,
+            "Unexpected number of columns",
+            "Expected single column of type '{0}' but found multiple columns.",
+            CategoryName,
+            DiagnosticSeverity.Error,
+            true,
+            "SQL query should return single column of matching type.",
+            null);
+
         private static readonly DiagnosticDescriptor MissingDatabaseHintDescriptor = new DiagnosticDescriptor(
             MissingDatabaseHintAttributeDiagnosticId,
             "Missing database hint",
@@ -155,6 +173,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
                     UnusedColumnsInQueryResultDescriptor,
                     PropertyTypeMismatchDescriptor,
                     TypeMismatchDescriptor,
+                    ExpectedSingleColumnInQueryResultDescriptor,
                     MissingDatabaseHintDescriptor);
         }
 
@@ -196,9 +215,29 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
         /// <param name="location">The location.</param>
         /// <param name="missingColumns">The missing columns.</param>
         /// <returns>Missing columns in query result diagnostic</returns>
-        internal static Diagnostic CreateMissingColumnsInQueryResultDiagnostic(Location location, IEnumerable<string> missingColumns)
+        internal static Diagnostic CreateMissingColumnsInQueryResultDiagnostic(Location location, List<ResultField> missingColumns)
         {
-            return Diagnostic.Create(MissingColumnsInQueryResultDescriptor, location, String.Join("\n", missingColumns ?? Enumerable.Empty<string>()));
+            string columnsText;
+            if (missingColumns == null)
+            {
+                columnsText = "";
+            }
+            else
+            {
+                var builder = new StringBuilder();
+                for (int i = 0; i < missingColumns.Count; i++)
+                {
+                    if (i > 0) builder.AppendLine();
+                    builder.Append(missingColumns[i].FieldName);
+                    builder.Append(" (");
+                    builder.Append(missingColumns[i].FieldType.ToDisplayString());
+                    builder.Append(")");
+                }
+
+                columnsText = builder.ToString();
+            }
+
+            return Diagnostic.Create(MissingColumnsInQueryResultDescriptor, location, columnsText);
         }
 
         /// <summary>
@@ -207,9 +246,26 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
         /// <param name="location">The location.</param>
         /// <param name="unusedColumns">The unused columns.</param>
         /// <returns>Unused columns in query result diagnostic</returns>
-        internal static Diagnostic CreateUnusedColumnsInQueryResultDiagnostic(Location location, IEnumerable<string> unusedColumns)
+        internal static Diagnostic CreateUnusedColumnsInQueryResultDiagnostic(Location location, List<ColumnInfo> unusedColumns)
         {
-            return Diagnostic.Create(UnusedColumnsInQueryResultDescriptor, location, String.Join("\n", unusedColumns ?? Enumerable.Empty<string>()));
+            string columnsText;
+            if (unusedColumns == null)
+            {
+                columnsText = "";
+            }
+            else
+            {
+                var builder = new StringBuilder();
+                for (int i = 0; i < unusedColumns.Count; i++)
+                {
+                    if (i > 0) builder.AppendLine();
+                    builder.Append(unusedColumns[i].Name);
+                }
+
+                columnsText = builder.ToString();
+            }
+
+            return Diagnostic.Create(UnusedColumnsInQueryResultDescriptor, location, columnsText);
         }
 
         /// <summary>
@@ -235,6 +291,17 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
         internal static Diagnostic CreateTypeMismatchDiagnostic(Location location, ITypeSymbol expectedType, ITypeSymbol foundType)
         {
             return Diagnostic.Create(TypeMismatchDescriptor, location, expectedType?.ToDisplayString(), foundType?.ToDisplayString());
+        }
+
+        /// <summary>
+        /// Creates the expected single column in query result diagnostic.
+        /// </summary>
+        /// <param name="location">The location.</param>
+        /// <param name="expectedType">The expected type.</param>
+        /// <returns>Expected single column in query result diagnostic</returns>
+        internal static Diagnostic CreateExpectedSingleColumnInQueryResultDiagnostic(Location location, ITypeSymbol expectedType)
+        {
+            return Diagnostic.Create(ExpectedSingleColumnInQueryResultDescriptor, location, expectedType?.ToDisplayString());
         }
 
         /// <summary>

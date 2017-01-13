@@ -14,9 +14,9 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis
     {
         private readonly ImmutableArray<ColumnInfo> _outputColumns;
 
-        private ValidatedQuery(IEnumerable<ColumnInfo> outputColumns)
+        private ValidatedQuery(ImmutableArray<ColumnInfo> outputColumns)
         {
-            _outputColumns = ImmutableArray.CreateRange(outputColumns);
+            _outputColumns = outputColumns;
         }
 
         /// <summary>
@@ -25,7 +25,7 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis
         /// <value>
         /// The output columns.
         /// </value>
-        public IReadOnlyList<ColumnInfo> OutputColumns
+        public ImmutableArray<ColumnInfo> OutputColumns
         {
             get
             {
@@ -80,7 +80,7 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis
             /// <returns>Immutable <see cref="ValidatedQuery"/></returns>
             public ValidatedQuery Build()
             {
-                return new ValidatedQuery(_outputColumns);
+                return new ValidatedQuery(ImmutableArray.CreateRange(_outputColumns));
             }
         }
     }
