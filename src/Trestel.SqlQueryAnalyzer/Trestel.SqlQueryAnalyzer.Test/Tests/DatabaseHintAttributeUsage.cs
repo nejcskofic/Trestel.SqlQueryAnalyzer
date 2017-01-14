@@ -1,7 +1,11 @@
 ﻿// Copyright (c) Nejc Skofic. All rights reserved.
 // Licensed under the MIT license. See LICENSE.txt file in the project root for full license information.
 
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
+using Moq;
 using NUnit.Framework;
 using TestHelper;
 using Trestel.SqlQueryAnalyzer.Analyzers;
@@ -39,20 +43,20 @@ namespace TestNamespace
     }
 }
 ";
-            var mockupValidationProvider = new MockupValidationProvider();
-            mockupValidationProvider.AddExpectedResult(
-                "SELECT BusinessEntityID, Title, FirstName, LastName FROM Person.Person",
-                Result.Success(ValidatedQuery.New().Build()));
+
+            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+            mockupValidationProvider.Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Result.Success(ValidatedQuery.New().Build())));
+            var mockupFactory = new Mock<Func<string, IQueryValidationProvider>>();
+            mockupFactory.Setup(x => x("Data Source=3")).Returns(mockupValidationProvider.Object);
 
             var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, mockupFactory.Object)
                 .Build();
 
             VerifyCSharpDiagnostic(factory, test);
 
             // verify that validation provider was called
-            Assert.AreEqual(1, mockupValidationProvider.ConnectionStrings.Count, "Expected one connection string.");
-            Assert.AreEqual(@"Data Source=3", mockupValidationProvider.ConnectionStrings[0], "Connection strings should match.");
+            mockupFactory.Verify(x => x("Data Source=3"), Times.Once, "Factory should be called for provider instance.");
         }
 
         [Test]
@@ -78,20 +82,19 @@ namespace TestNamespace
     }
 }
 ";
-            var mockupValidationProvider = new MockupValidationProvider();
-            mockupValidationProvider.AddExpectedResult(
-                "SELECT BusinessEntityID, Title, FirstName, LastName FROM Person.Person",
-                Result.Success(ValidatedQuery.New().Build()));
+            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+            mockupValidationProvider.Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Result.Success(ValidatedQuery.New().Build())));
+            var mockupFactory = new Mock<Func<string, IQueryValidationProvider>>();
+            mockupFactory.Setup(x => x("Data Source=2")).Returns(mockupValidationProvider.Object);
 
             var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, mockupFactory.Object)
                 .Build();
 
             VerifyCSharpDiagnostic(factory, test);
 
             // verify that validation provider was called
-            Assert.AreEqual(1, mockupValidationProvider.ConnectionStrings.Count, "Expected one connection string.");
-            Assert.AreEqual(@"Data Source=2", mockupValidationProvider.ConnectionStrings[0], "Connection strings shuld match.");
+            mockupFactory.Verify(x => x("Data Source=2"), Times.Once, "Factory should be called for provider instance.");
         }
 
         [Test]
@@ -116,20 +119,19 @@ namespace TestNamespace
     }
 }
 ";
-            var mockupValidationProvider = new MockupValidationProvider();
-            mockupValidationProvider.AddExpectedResult(
-                "SELECT BusinessEntityID, Title, FirstName, LastName FROM Person.Person",
-                Result.Success(ValidatedQuery.New().Build()));
+            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+            mockupValidationProvider.Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Result.Success(ValidatedQuery.New().Build())));
+            var mockupFactory = new Mock<Func<string, IQueryValidationProvider>>();
+            mockupFactory.Setup(x => x("Data Source=1")).Returns(mockupValidationProvider.Object);
 
             var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, mockupFactory.Object)
                 .Build();
 
             VerifyCSharpDiagnostic(factory, test);
 
             // verify that validation provider was called
-            Assert.AreEqual(1, mockupValidationProvider.ConnectionStrings.Count, "Expected one connection string.");
-            Assert.AreEqual(@"Data Source=1", mockupValidationProvider.ConnectionStrings[0], "Connection strings shuld match.");
+            mockupFactory.Verify(x => x("Data Source=1"), Times.Once, "Factory should be called for provider instance.");
         }
 
         [Test]
@@ -152,13 +154,13 @@ namespace TestNamespace
     }
 }
 ";
-            var mockupValidationProvider = new MockupValidationProvider();
-            mockupValidationProvider.AddExpectedResult(
-                "SELECT BusinessEntityID, Title, FirstName, LastName FROM Person.Person",
-                Result.Success(ValidatedQuery.New().Build()));
+            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+            mockupValidationProvider.Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Result.Success(ValidatedQuery.New().Build())));
+            var mockupFactory = new Mock<Func<string, IQueryValidationProvider>>();
+            mockupFactory.Setup(x => x(It.IsAny<string>())).Returns(mockupValidationProvider.Object);
 
             var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, mockupFactory.Object)
                 .Build();
 
             var expected = new DiagnosticResult
@@ -172,7 +174,7 @@ namespace TestNamespace
             VerifyCSharpDiagnostic(factory, test, expected);
 
             // verify that validation provider was called
-            Assert.AreEqual(0, mockupValidationProvider.ConnectionStrings.Count, "There should be no conection string.");
+            mockupFactory.Verify(x => x("Data Source=1"), Times.Never, "Factory should not be called if attribute is not present.");
         }
 
         [Test]
@@ -196,20 +198,19 @@ namespace TestNamespace
     }
 }
 ";
-            var mockupValidationProvider = new MockupValidationProvider();
-            mockupValidationProvider.AddExpectedResult(
-                "SELECT BusinessEntityID, Title, FirstName, LastName FROM Person.Person",
-                Result.Success(ValidatedQuery.New().Build()));
+            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+            mockupValidationProvider.Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Result.Success(ValidatedQuery.New().Build())));
+            var mockupFactory = new Mock<Func<string, IQueryValidationProvider>>();
+            mockupFactory.Setup(x => x("Data Source=3")).Returns(mockupValidationProvider.Object);
 
             var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, mockupFactory.Object)
                 .Build();
 
             VerifyCSharpDiagnostic(factory, test);
 
             // verify that validation provider was called
-            Assert.AreEqual(1, mockupValidationProvider.ConnectionStrings.Count, "Expected one connection string.");
-            Assert.AreEqual(@"Data Source=3", mockupValidationProvider.ConnectionStrings[0], "Connection strings should match.");
+            mockupFactory.Verify(x => x("Data Source=3"), Times.Once, "Factory should be called for provider instance.");
         }
     }
 }

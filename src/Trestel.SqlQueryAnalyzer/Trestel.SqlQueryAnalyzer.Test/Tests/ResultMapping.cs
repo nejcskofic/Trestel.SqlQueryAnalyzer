@@ -2,7 +2,10 @@
 // Licensed under the MIT license. See LICENSE.txt file in the project root for full license information.
 
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
+using Moq;
 using NUnit.Framework;
 using Templates;
 using TestHelper;
@@ -34,19 +37,18 @@ namespace Tests
 ";
             var source = SourceCodeTemplates.GetSourceCodeFromTemplateWithResultMapping(query, "Person", additionalClass);
 
-            var mockupValidationProvider = new MockupValidationProvider();
-            mockupValidationProvider.AddExpectedResult(
-                query,
-                Result.Success(
-                    ValidatedQuery.New()
+            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+            mockupValidationProvider
+                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                         .AddOutputColumn("BusinessEntityID", typeof(int))
                         .AddOutputColumn("Title", typeof(string))
                         .AddOutputColumn("FirstName", typeof(string))
                         .AddOutputColumn("LastName", typeof(string))
-                        .AddOutputColumn("ModifiedDate", typeof(DateTime)).Build()));
+                        .AddOutputColumn("ModifiedDate", typeof(DateTime)).Build())));
 
             var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
                 .Build();
 
             VerifyCSharpDiagnostic(factory, source);
@@ -67,19 +69,18 @@ namespace Tests
 ";
             var source = SourceCodeTemplates.GetSourceCodeFromTemplateWithResultMapping(query, "Person", additionalClass);
 
-            var mockupValidationProvider = new MockupValidationProvider();
-            mockupValidationProvider.AddExpectedResult(
-                query,
-                Result.Success(
-                    ValidatedQuery.New()
+            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+            mockupValidationProvider
+                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                         .AddOutputColumn("BusinessEntityID", typeof(int))
                         .AddOutputColumn("Title", typeof(string))
                         .AddOutputColumn("FirstName", typeof(string))
                         .AddOutputColumn("LastName", typeof(string))
-                        .AddOutputColumn("ModifiedDate", typeof(DateTime)).Build()));
+                        .AddOutputColumn("ModifiedDate", typeof(DateTime)).Build())));
 
             var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
                 .RegisterCallSiteAnalyzerInstance(new GenericAnalyzer())
                 .Build();
 
@@ -110,18 +111,17 @@ namespace Tests
 ";
             var source = SourceCodeTemplates.GetSourceCodeFromTemplateWithResultMapping(query, "Person", additionalClass);
 
-            var mockupValidationProvider = new MockupValidationProvider();
-            mockupValidationProvider.AddExpectedResult(
-                query,
-                Result.Success(
-                    ValidatedQuery.New()
+            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+            mockupValidationProvider
+                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                         .AddOutputColumn("BusinessEntityID", typeof(int))
                         .AddOutputColumn("Title", typeof(string))
                         .AddOutputColumn("FirstName", typeof(string))
-                        .AddOutputColumn("ModifiedDate", typeof(DateTime)).Build()));
+                        .AddOutputColumn("ModifiedDate", typeof(DateTime)).Build())));
 
             var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
                 .RegisterCallSiteAnalyzerInstance(new GenericAnalyzer())
                 .Build();
 
@@ -152,19 +152,18 @@ namespace Tests
 ";
             var source = SourceCodeTemplates.GetSourceCodeFromTemplateWithResultMapping(query, "Person", additionalClass);
 
-            var mockupValidationProvider = new MockupValidationProvider();
-            mockupValidationProvider.AddExpectedResult(
-                query,
-                Result.Success(
-                    ValidatedQuery.New()
+            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+            mockupValidationProvider
+                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                         .AddOutputColumn("BusinessEntityID", typeof(int))
                         .AddOutputColumn("Title", typeof(string))
                         .AddOutputColumn("FirstName", typeof(string))
                         .AddOutputColumn("LastName", typeof(string))
-                        .AddOutputColumn("ModifiedDate", typeof(DateTime)).Build()));
+                        .AddOutputColumn("ModifiedDate", typeof(DateTime)).Build())));
 
             var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
                 .RegisterCallSiteAnalyzerInstance(new GenericAnalyzer())
                 .Build();
 
@@ -195,19 +194,18 @@ namespace Tests
 ";
             var test = SourceCodeTemplates.GetSourceCodeFromTemplateWithResultMapping(query, "Person", additionalClass);
 
-            var mockupValidationProvider = new MockupValidationProvider();
-            mockupValidationProvider.AddExpectedResult(
-                query,
-                Result.Success(
-                    ValidatedQuery.New()
+            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+            mockupValidationProvider
+                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                         .AddOutputColumn("BusinessEntityID", typeof(int))
                         .AddOutputColumn("Title", typeof(string))
                         .AddOutputColumn("FirstName", typeof(string))
                         .AddOutputColumn("LastName", typeof(string))
-                        .AddOutputColumn("ModifiedDate", typeof(DateTime)).Build()));
+                        .AddOutputColumn("ModifiedDate", typeof(DateTime)).Build())));
 
             var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
                 .Build();
 
             VerifyCSharpDiagnostic(factory, test);
@@ -219,16 +217,14 @@ namespace Tests
             var query = "SELECT rowguid FROM Person.Person";
             var source = SourceCodeTemplates.GetSourceCodeFromTemplateWithResultMapping(query, "Guid");
 
-            var mockupValidationProvider = new MockupValidationProvider();
-            mockupValidationProvider.AddExpectedResult(
-                query,
-                Result.Success(
-                    ValidatedQuery.New()
-                        .AddOutputColumn("rowguid", typeof(Guid))
-                        .Build()));
+            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+            mockupValidationProvider
+                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
+                        .AddOutputColumn("rowguid", typeof(Guid)).Build())));
 
             var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
                 .Build();
 
             VerifyCSharpDiagnostic(factory, source);
@@ -240,16 +236,14 @@ namespace Tests
             var query = "SELECT rowguid FROM Person.Person";
             var source = SourceCodeTemplates.GetSourceCodeFromTemplateWithResultMapping(query, "Guid");
 
-            var mockupValidationProvider = new MockupValidationProvider();
-            mockupValidationProvider.AddExpectedResult(
-                query,
-                Result.Success(
-                    ValidatedQuery.New()
-                        .AddOutputColumn("rowguid", typeof(Guid))
-                        .Build()));
+            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+            mockupValidationProvider
+                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
+                        .AddOutputColumn("rowguid", typeof(Guid)).Build())));
 
             var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
                 .Build();
 
             VerifyCSharpDiagnostic(factory, source);
@@ -261,16 +255,14 @@ namespace Tests
             var query = "SELECT rowguid FROM Person.Person";
             var source = SourceCodeTemplates.GetSourceCodeFromTemplateWithResultMapping(query, "Guid?");
 
-            var mockupValidationProvider = new MockupValidationProvider();
-            mockupValidationProvider.AddExpectedResult(
-                query,
-                Result.Success(
-                    ValidatedQuery.New()
-                        .AddOutputColumn("rowguid", typeof(Guid?))
-                        .Build()));
+            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+            mockupValidationProvider
+                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
+                        .AddOutputColumn("rowguid", typeof(Guid?)).Build())));
 
             var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
                 .Build();
 
             VerifyCSharpDiagnostic(factory, source);
@@ -282,16 +274,14 @@ namespace Tests
             var query = "SELECT RecordVersion FROM Person.Person";
             var source = SourceCodeTemplates.GetSourceCodeFromTemplateWithResultMapping(query, "byte[]");
 
-            var mockupValidationProvider = new MockupValidationProvider();
-            mockupValidationProvider.AddExpectedResult(
-                query,
-                Result.Success(
-                    ValidatedQuery.New()
-                        .AddOutputColumn("RecordVersion", typeof(byte[]))
-                        .Build()));
+            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+            mockupValidationProvider
+                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
+                        .AddOutputColumn("RecordVersion", typeof(byte[])).Build())));
 
             var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
                 .Build();
 
             VerifyCSharpDiagnostic(factory, source);
@@ -303,16 +293,14 @@ namespace Tests
             var query = "SELECT RecordVersion FROM Person.Person";
             var source = SourceCodeTemplates.GetSourceCodeFromTemplateWithResultMapping(query, "string");
 
-            var mockupValidationProvider = new MockupValidationProvider();
-            mockupValidationProvider.AddExpectedResult(
-                query,
-                Result.Success(
-                    ValidatedQuery.New()
-                        .AddOutputColumn("RecordVersion", typeof(byte[]))
-                        .Build()));
+            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+            mockupValidationProvider
+                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
+                        .AddOutputColumn("RecordVersion", typeof(byte[])).Build())));
 
             var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
                 .RegisterCallSiteAnalyzerInstance(new GenericAnalyzer())
                 .Build();
 
@@ -333,16 +321,14 @@ namespace Tests
             var query = "SELECT rowguid FROM Person.Person";
             var source = SourceCodeTemplates.GetSourceCodeFromTemplateWithResultMapping(query, "string");
 
-            var mockupValidationProvider = new MockupValidationProvider();
-            mockupValidationProvider.AddExpectedResult(
-                query,
-                Result.Success(
-                    ValidatedQuery.New()
-                        .AddOutputColumn("rowguid", typeof(Guid))
-                        .Build()));
+            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+            mockupValidationProvider
+                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
+                        .AddOutputColumn("rowguid", typeof(Guid)).Build())));
 
             var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
                 .RegisterCallSiteAnalyzerInstance(new GenericAnalyzer())
                 .Build();
 

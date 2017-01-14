@@ -2,7 +2,10 @@
 // Licensed under the MIT license. See LICENSE.txt file in the project root for full license information.
 
 using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
+using Moq;
 using NUnit.Framework;
 using Templates;
 using TestHelper;
@@ -44,20 +47,17 @@ namespace TestNamespace
             var query = "SELECT BusinessEntityID, Title, FirstName, LastName FROM Person.Person";
             var source = SourceCodeTemplates.GetSourceCodeFromSimpleTemplate(query);
 
-            var mockupValidationProvider = new MockupValidationProvider();
-            mockupValidationProvider.AddExpectedResult(
-                query,
-                Result.Success(ValidatedQuery.New().Build()));
+            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+            mockupValidationProvider.Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>())).Returns(Task.FromResult(Result.Success(ValidatedQuery.New().Build())));
 
             var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
                 .Build();
 
             VerifyCSharpDiagnostic(factory, source);
 
             // verify that validation provider was called
-            Assert.AreEqual(1, mockupValidationProvider.AccessedQueries.Count, "Expected one query.");
-            Assert.AreEqual(query, mockupValidationProvider.AccessedQueries[0], "Queries should match.");
+            mockupValidationProvider.Verify(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()), Times.Once, "Provider should be called for specific query.");
         }
 
         [Test]
@@ -66,13 +66,13 @@ namespace TestNamespace
             var query = "SELECTA BusinessEntityID, Title, FirstName, LastName FROM Person.Person";
             var source = SourceCodeTemplates.GetSourceCodeFromSimpleTemplate(query);
 
-            var mockupValidationProvider = new MockupValidationProvider();
-            mockupValidationProvider.AddExpectedResult(
-                query,
-                Result.Failure<ValidatedQuery>(new List<string>() { "Incorrect syntax near the keyword 'FROM'." }));
+            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+            mockupValidationProvider
+                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(Result.Failure<ValidatedQuery>(new List<string>() { "Incorrect syntax near the keyword 'FROM'." })));
 
             var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.WithConnectionString(connection))
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
                 .Build();
 
             var expected = new DiagnosticResult
@@ -85,8 +85,7 @@ namespace TestNamespace
 
             VerifyCSharpDiagnostic(factory, source, expected);
 
-            Assert.AreEqual(1, mockupValidationProvider.AccessedQueries.Count, "Expected one query.");
-            Assert.AreEqual(query, mockupValidationProvider.AccessedQueries[0], "Queries should match.");
+            mockupValidationProvider.Verify(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()), Times.Once, "Provider should be called for specific query.");
         }
     }
 }

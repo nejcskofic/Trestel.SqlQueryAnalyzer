@@ -34,7 +34,7 @@ namespace Tests
         [Test]
         public void RegisterAndRetrieveQueryValidationProvider()
         {
-            var validationProvider = new MockupValidationProvider();
+            var validationProvider = new Mock<IQueryValidationProvider>().Object;
             var factory = ServiceFactory.New()
                 .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connectionString) => validationProvider)
                 .Build();
@@ -46,7 +46,7 @@ namespace Tests
         public void CacheQueryValidationProvider()
         {
             var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connectionString) => new MockupValidationProvider())
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connectionString) => new Mock<IQueryValidationProvider>().Object)
                 .Build();
             var connectionData = new ConnectionStringData("<something>", DatabaseType.SqlServer);
             var otherConnectionData = new ConnectionStringData("<something other>", DatabaseType.SqlServer);
