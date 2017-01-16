@@ -6,55 +6,47 @@ using System;
 namespace Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis
 {
     /// <summary>
-    /// Immutable struct containing column information such as name, type and ordinal position.
+    /// Struct containing parameter info.
     /// </summary>
-    public struct ColumnInfo : IEquatable<ColumnInfo>
+    /// <seealso cref="System.IEquatable{T}" />
+    public struct ParameterInfo : IEquatable<ParameterInfo>
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ColumnInfo" /> struct.
+        /// Initializes a new instance of the <see cref="ParameterInfo"/> struct.
         /// </summary>
-        /// <param name="ordinal">The ordinal.</param>
+        /// <param name="position">The position.</param>
         /// <param name="name">The name.</param>
         /// <param name="type">The type.</param>
-        public ColumnInfo(int ordinal, string name, Type type)
+        public ParameterInfo(int position, string name, Type type)
         {
-            Ordinal = ordinal;
-            Name = name;
-            Type = type;
+            Position = position;
+            ParameterName = name;
+            ParameterType = type;
         }
 
         /// <summary>
-        /// Gets the ordinal position.
+        /// Gets the position.
         /// </summary>
         /// <value>
-        /// The ordinal.
+        /// The position.
         /// </value>
-        public int Ordinal
-        {
-            get;
-        }
+        public int Position { get; }
 
         /// <summary>
-        /// Gets the name.
+        /// Gets the name of the parameter.
         /// </summary>
         /// <value>
-        /// The name.
+        /// The name of the parameter.
         /// </value>
-        public string Name
-        {
-            get;
-        }
+        public string ParameterName { get; }
 
         /// <summary>
-        /// Gets the type.
+        /// Gets the type of the parameter.
         /// </summary>
         /// <value>
-        /// The type.
+        /// The type of the parameter.
         /// </value>
-        public Type Type
-        {
-            get;
-        }
+        public Type ParameterType { get; }
 
         /// <summary>
         /// Implements the operator ==.
@@ -64,7 +56,7 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis
         /// <returns>
         /// The result of the operator.
         /// </returns>
-        public static bool operator ==(ColumnInfo obj1, ColumnInfo obj2)
+        public static bool operator ==(ParameterInfo obj1, ParameterInfo obj2)
         {
             return obj1.Equals(obj2);
         }
@@ -77,7 +69,7 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis
         /// <returns>
         /// The result of the operator.
         /// </returns>
-        public static bool operator !=(ColumnInfo obj1, ColumnInfo obj2)
+        public static bool operator !=(ParameterInfo obj1, ParameterInfo obj2)
         {
             return !(obj1 == obj2);
         }
@@ -89,11 +81,11 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis
         /// <returns>
         /// true if the current object is equal to the <paramref name="other" /> parameter; otherwise, false.
         /// </returns>
-        public bool Equals(ColumnInfo other)
+        public bool Equals(ParameterInfo other)
         {
-            return Ordinal == other.Ordinal &&
-                Name == other.Name &&
-                Type == other.Type;
+            return Position == other.Position &&
+                ParameterName == other.ParameterName &&
+                ParameterType == other.ParameterType;
         }
 
         /// <summary>
@@ -105,7 +97,7 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis
         /// </returns>
         public override bool Equals(object obj)
         {
-            return obj is ColumnInfo ? this.Equals((ColumnInfo)obj) : false;
+            return obj is ParameterInfo ? this.Equals((ParameterInfo)obj) : false;
         }
 
         /// <summary>
@@ -119,9 +111,9 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis
             unchecked
             {
                 int hash = 17;
-                hash = hash * 31 + Ordinal;
-                hash = hash * 31 + (Name != null ? Name.GetHashCode() : 0);
-                hash = hash * 31 + (Type != null ? Type.GetHashCode() : 0);
+                hash = hash * 31 + Position;
+                hash = hash * 31 + (ParameterName != null ? ParameterName.GetHashCode() : 0);
+                hash = hash * 31 + (ParameterType != null ? ParameterType.GetHashCode() : 0);
                 return hash;
             }
         }

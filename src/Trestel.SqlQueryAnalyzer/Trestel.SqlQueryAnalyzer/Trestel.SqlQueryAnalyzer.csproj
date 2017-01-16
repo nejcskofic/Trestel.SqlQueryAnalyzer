@@ -130,6 +130,7 @@
     <Compile Include="Infrastructure\CallSiteAnalysis\ResultField.cs" />
     <Compile Include="Infrastructure\QueryAnalysis\IQueryValidationProvider.cs" />
     <Compile Include="Infrastructure\QueryAnalysis\ColumnInfo.cs" />
+    <Compile Include="Infrastructure\QueryAnalysis\ParameterInfo.cs" />
     <Compile Include="Infrastructure\QueryAnalysis\ValidatedQuery.cs" />
     <Compile Include="Infrastructure\ServiceFactory.cs" />
     <Compile Include="Infrastructure\ServiceFactoryExtensions.cs" />

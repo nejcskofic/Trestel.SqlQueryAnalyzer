@@ -12,12 +12,19 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis
     /// </summary>
     public sealed class ValidatedQuery
     {
-        private readonly ImmutableArray<ColumnInfo> _outputColumns;
-
-        private ValidatedQuery(ImmutableArray<ColumnInfo> outputColumns)
+        private ValidatedQuery(ImmutableArray<ParameterInfo> parameters, ImmutableArray<ColumnInfo> outputColumns)
         {
-            _outputColumns = outputColumns;
+            Parameters = parameters;
+            OutputColumns = outputColumns;
         }
+
+        /// <summary>
+        /// Gets the parameters.
+        /// </summary>
+        /// <value>
+        /// The parameters.
+        /// </value>
+        public ImmutableArray<ParameterInfo> Parameters { get; }
 
         /// <summary>
         /// Gets the output columns.
@@ -25,13 +32,7 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis
         /// <value>
         /// The output columns.
         /// </value>
-        public ImmutableArray<ColumnInfo> OutputColumns
-        {
-            get
-            {
-                return _outputColumns;
-            }
-        }
+        public ImmutableArray<ColumnInfo> OutputColumns { get; }
 
         /// <summary>
         /// Creates new <see cref="Builder"/> instance to build this object.
@@ -47,6 +48,7 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis
         /// </summary>
         public sealed class Builder
         {
+            private readonly List<ParameterInfo> _parameters;
             private readonly List<ColumnInfo> _outputColumns;
 
             /// <summary>
@@ -54,7 +56,25 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis
             /// </summary>
             internal Builder()
             {
+                _parameters = new List<ParameterInfo>();
                 _outputColumns = new List<ColumnInfo>();
+            }
+
+            /// <summary>
+            /// Adds the parameter.
+            /// </summary>
+            /// <param name="name">The name.</param>
+            /// <param name="type">The type.</param>
+            /// <returns>This instance</returns>
+            /// <exception cref="System.ArgumentException">Argument null or empty - name</exception>
+            /// <exception cref="System.ArgumentNullException">type</exception>
+            public Builder AddParameter(string name, Type type)
+            {
+                if (String.IsNullOrEmpty(name)) throw new ArgumentException("Argument null or empty", nameof(name));
+                if (type == null) throw new ArgumentNullException(nameof(type));
+
+                _parameters.Add(new ParameterInfo(_parameters.Count, name, type));
+                return this;
             }
 
             /// <summary>
@@ -67,7 +87,7 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis
             /// <exception cref="System.ArgumentNullException">type</exception>
             public Builder AddOutputColumn(string name, Type type)
             {
-                if (String.IsNullOrEmpty(name)) throw new ArgumentException("Name cannot be null or empty", nameof(name));
+                if (String.IsNullOrEmpty(name)) throw new ArgumentException("Argument null or empty", nameof(name));
                 if (type == null) throw new ArgumentNullException(nameof(type));
 
                 _outputColumns.Add(new ColumnInfo(_outputColumns.Count, name, type));
@@ -80,7 +100,7 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis
             /// <returns>Immutable <see cref="ValidatedQuery"/></returns>
             public ValidatedQuery Build()
             {
-                return new ValidatedQuery(ImmutableArray.CreateRange(_outputColumns));
+                return new ValidatedQuery(ImmutableArray.CreateRange(_parameters), ImmutableArray.CreateRange(_outputColumns));
             }
         }
     }

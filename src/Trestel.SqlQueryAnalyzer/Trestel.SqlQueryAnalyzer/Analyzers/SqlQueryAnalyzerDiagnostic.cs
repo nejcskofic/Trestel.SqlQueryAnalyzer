@@ -69,6 +69,21 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
         /// </summary>
         public const string MissingDatabaseHintAttributeDiagnosticId = "SQL0009";
 
+        /// <summary>
+        /// The parameter type mismatch diagnostic identifier
+        /// </summary>
+        public const string ParameterTypeMismatchDiagnosticId = "SQL0010";
+
+        /// <summary>
+        /// The missing parameter diagnostic identifier
+        /// </summary>
+        public const string MissingParameterDiagnosticId = "SQL0011";
+
+        /// <summary>
+        /// The unused parameter diagnostic identifier
+        /// </summary>
+        public const string UnusedParameterDiagnosticId = "SQL0012";
+
         private static readonly DiagnosticDescriptor FailedToValidateDescriptor = new DiagnosticDescriptor(
             FailedToValidateDiagnosticId,
             "Unable to complete validation",
@@ -82,7 +97,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
         private static readonly DiagnosticDescriptor ErrorsInSqlQueryDescriptor = new DiagnosticDescriptor(
             ErrorsInSqlQueryDiagnosticId,
             "Error in SQL statement",
-            "There are following errors in SQL query:\n{0}",
+            "There are following errors in SQL query:{0}",
             CategoryName,
             DiagnosticSeverity.Error,
             true,
@@ -102,7 +117,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
         private static readonly DiagnosticDescriptor MissingColumnsInQueryResultDescriptor = new DiagnosticDescriptor(
             MissingColumnsInQueryResultDiagnosticId,
             "Missing columns",
-            "Following columns were expected in result set, but were not found:\n{0}",
+            "Following columns were expected in result set, but were not found:{0}",
             CategoryName,
             DiagnosticSeverity.Error,
             true,
@@ -112,7 +127,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
         private static readonly DiagnosticDescriptor UnusedColumnsInQueryResultDescriptor = new DiagnosticDescriptor(
             UnusedColumnsInQueryResultDiagnosticId,
             "Unused columns",
-            "Following columns were found in result set, but are not being used:\n{0}",
+            "Following columns were found in result set, but are not being used:{0}",
             CategoryName,
             DiagnosticSeverity.Error,
             true,
@@ -159,6 +174,36 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
             "Attribute 'Trestel.Database.Design.DatabaseHintAttribute' is required to specify connection to database for analisys.",
             null);
 
+        private static readonly DiagnosticDescriptor ParameterTypeMismatchDescriptor = new DiagnosticDescriptor(
+            ParameterTypeMismatchDiagnosticId,
+            "Types do not match",
+            "For parameter '{0}' expected type '{1}', but found type '{2}'.",
+            CategoryName,
+            DiagnosticSeverity.Error,
+            true,
+            "Parameter type should match one expected by database.",
+            null);
+
+        private static readonly DiagnosticDescriptor MissingParameterDescriptor = new DiagnosticDescriptor(
+            MissingParameterDiagnosticId,
+            "Missing parameters",
+            "Following parameters were expected by query but were not found:{0}",
+            CategoryName,
+            DiagnosticSeverity.Error,
+            true,
+            "All parameters for query should be supplied.",
+            null);
+
+        private static readonly DiagnosticDescriptor UnusedParameterDescriptor = new DiagnosticDescriptor(
+            UnusedParameterDiagnosticId,
+            "Unused parameters",
+            "Following parameters are present but not required:{0}",
+            CategoryName,
+            DiagnosticSeverity.Error,
+            true,
+            "Only parameters requried for query execution should be declared.",
+            null);
+
         /// <summary>
         /// Gets the supported diagnostics.
         /// </summary>
@@ -174,7 +219,10 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
                     PropertyTypeMismatchDescriptor,
                     TypeMismatchDescriptor,
                     ExpectedSingleColumnInQueryResultDescriptor,
-                    MissingDatabaseHintDescriptor);
+                    MissingDatabaseHintDescriptor,
+                    ParameterTypeMismatchDescriptor,
+                    MissingParameterDescriptor,
+                    UnusedParameterDescriptor);
         }
 
         /// <summary>
@@ -194,9 +242,9 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
         /// <param name="location">The location.</param>
         /// <param name="errors">The errors.</param>
         /// <returns>Errors in SQL query diagnostic</returns>
-        internal static Diagnostic CreateErrorsInSqlQueryDiagnostic(Location location, IEnumerable<string> errors)
+        internal static Diagnostic CreateErrorsInSqlQueryDiagnostic(Location location, IList<string> errors)
         {
-            return Diagnostic.Create(ErrorsInSqlQueryDescriptor, location, String.Join("\n", errors ?? Enumerable.Empty<string>()));
+            return Diagnostic.Create(ErrorsInSqlQueryDescriptor, location, Environment.NewLine + String.Join(Environment.NewLine, errors ?? Enumerable.Empty<string>()));
         }
 
         /// <summary>
@@ -215,7 +263,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
         /// <param name="location">The location.</param>
         /// <param name="missingColumns">The missing columns.</param>
         /// <returns>Missing columns in query result diagnostic</returns>
-        internal static Diagnostic CreateMissingColumnsInQueryResultDiagnostic(Location location, List<ResultField> missingColumns)
+        internal static Diagnostic CreateMissingColumnsInQueryResultDiagnostic(Location location, IList<ResultField> missingColumns)
         {
             string columnsText;
             if (missingColumns == null)
@@ -227,7 +275,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
                 var builder = new StringBuilder();
                 for (int i = 0; i < missingColumns.Count; i++)
                 {
-                    if (i > 0) builder.AppendLine();
+                    builder.AppendLine();
                     builder.Append(missingColumns[i].FieldName);
                     builder.Append(" (");
                     builder.Append(missingColumns[i].FieldType.ToDisplayString());
@@ -246,7 +294,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
         /// <param name="location">The location.</param>
         /// <param name="unusedColumns">The unused columns.</param>
         /// <returns>Unused columns in query result diagnostic</returns>
-        internal static Diagnostic CreateUnusedColumnsInQueryResultDiagnostic(Location location, List<ColumnInfo> unusedColumns)
+        internal static Diagnostic CreateUnusedColumnsInQueryResultDiagnostic(Location location, IList<ColumnInfo> unusedColumns)
         {
             string columnsText;
             if (unusedColumns == null)
@@ -258,7 +306,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
                 var builder = new StringBuilder();
                 for (int i = 0; i < unusedColumns.Count; i++)
                 {
-                    if (i > 0) builder.AppendLine();
+                    builder.AppendLine();
                     builder.Append(unusedColumns[i].Name);
                 }
 
@@ -312,6 +360,78 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
         internal static Diagnostic CreateMissingDatabaseHintDiagnostic(Location location)
         {
             return Diagnostic.Create(MissingDatabaseHintDescriptor, location);
+        }
+
+        /// <summary>
+        /// Creates the parameter type mismatch diagnostic.
+        /// </summary>
+        /// <param name="location">The location.</param>
+        /// <param name="parameterName">Name of the parameter.</param>
+        /// <param name="expectedType">The expected type.</param>
+        /// <param name="foundType">Type of the found.</param>
+        /// <returns>Parameter type mismatch diagnostic</returns>
+        internal static Diagnostic CreateParameterTypeMismatchDiagnostic(Location location, string parameterName, ITypeSymbol expectedType, ITypeSymbol foundType)
+        {
+            return Diagnostic.Create(ParameterTypeMismatchDescriptor, location, parameterName, expectedType?.ToDisplayString(), foundType?.ToDisplayString());
+        }
+
+        /// <summary>
+        /// Creates the missing parameter diagnostic.
+        /// </summary>
+        /// <param name="location">The location.</param>
+        /// <param name="missingParameters">The missing parameters.</param>
+        /// <returns>Missing parameter diagnostic</returns>
+        internal static Diagnostic CreateMissingParameterDiagnostic(Location location, IList<ParameterInfo> missingParameters)
+        {
+            string parametersText;
+            if (missingParameters == null)
+            {
+                parametersText = "";
+            }
+            else
+            {
+                var builder = new StringBuilder();
+                for (int i = 0; i < missingParameters.Count; i++)
+                {
+                    builder.AppendLine();
+                    builder.Append(missingParameters[i].ParameterName);
+                    builder.Append(" (");
+                    builder.Append(missingParameters[i].ParameterType.FullName);
+                    builder.Append(")");
+                }
+
+                parametersText = builder.ToString();
+            }
+
+            return Diagnostic.Create(MissingParameterDescriptor, location, parametersText);
+        }
+
+        /// <summary>
+        /// Creates the unused parameter diagnostic.
+        /// </summary>
+        /// <param name="location">The location.</param>
+        /// <param name="unusedParameters">The unused parameters.</param>
+        /// <returns>Unused parameter diagnostic</returns>
+        internal static Diagnostic CreateUnusedParameterDiagnostic(Location location, IList<Parameter> unusedParameters)
+        {
+            string parametersText;
+            if (unusedParameters == null)
+            {
+                parametersText = "";
+            }
+            else
+            {
+                var builder = new StringBuilder();
+                for (int i = 0; i < unusedParameters.Count; i++)
+                {
+                    builder.AppendLine();
+                    builder.Append(unusedParameters[i].ParameterName);
+                }
+
+                parametersText = builder.ToString();
+            }
+
+            return Diagnostic.Create(UnusedParameterDescriptor, location, parametersText);
         }
     }
 }

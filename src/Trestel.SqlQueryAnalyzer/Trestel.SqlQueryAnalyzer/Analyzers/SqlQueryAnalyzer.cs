@@ -220,6 +220,47 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
 
         private static void CheckParameterMapping(NormalizedCallSite callSite, ValidatedQuery validatedQuery, InvocationExpressionSyntax targetNode, SyntaxNodeAnalysisContext context)
         {
+            var unusedParameters = new List<Parameter>(callSite.InputParameters);
+            var missingParameters = new List<ParameterInfo>();
+
+            for (int i = 0; i < validatedQuery.Parameters.Length; i++)
+            {
+                var queryParameter = validatedQuery.Parameters[i];
+                bool found = false;
+                for (int j = 0; j < callSite.InputParameters.Length; j++)
+                {
+                    var parameter = callSite.InputParameters[j];
+                    if (queryParameter.ParameterName == parameter.ParameterName)
+                    {
+                        found = true;
+                        unusedParameters.Remove(parameter);
+
+                        var queryParameterType = queryParameter.ParameterType.ConvertFromRuntimeType(context.SemanticModel.Compilation);
+                        if (queryParameterType != null && !parameter.ParameterType.CanAssign(queryParameterType, context.SemanticModel.Compilation))
+                        {
+                            context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateParameterTypeMismatchDiagnostic(targetNode.GetLocation(), queryParameter.ParameterName, queryParameterType, parameter.ParameterType));
+                        }
+
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    missingParameters.Add(queryParameter);
+                }
+            }
+
+            // report diagnostic
+            if (unusedParameters.Count > 0)
+            {
+                context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateUnusedParameterDiagnostic(targetNode.GetLocation(), unusedParameters));
+            }
+
+            if (missingParameters.Count > 0)
+            {
+                context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateMissingParameterDiagnostic(targetNode.GetLocation(), missingParameters));
+            }
         }
 
         private static void CheckResultMapping(NormalizedCallSite callSite, ValidatedQuery validatedQuery, InvocationExpressionSyntax targetNode, SyntaxNodeAnalysisContext context)

@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Nejc Skofic. All rights reserved.
 // Licensed under the MIT license. See LICENSE.txt file in the project root for full license information.
 
+using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -78,7 +79,7 @@ namespace TestNamespace
             var expected = new DiagnosticResult
             {
                 Id = SqlQueryAnalyzerDiagnostic.ErrorsInSqlQueryDiagnosticId,
-                Message = "There are following errors in SQL query:\nIncorrect syntax near the keyword 'FROM'.",
+                Message = "There are following errors in SQL query:" + Environment.NewLine + "Incorrect syntax near the keyword 'FROM'.",
                 Severity = DiagnosticSeverity.Error,
                 Locations = new[] { new DiagnosticResultLocation("Test0.cs", 14, 23) }
             };

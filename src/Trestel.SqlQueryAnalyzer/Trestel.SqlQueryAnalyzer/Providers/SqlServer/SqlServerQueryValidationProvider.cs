@@ -75,10 +75,33 @@ namespace Trestel.SqlQueryAnalyzer.Providers.SqlServer
 
             using (var connection = new SqlConnection(_connectionString))
             {
-                var command = CreateQueryForDescribingFirstResultSet(connection, rawSqlQuery);
-
                 connection.Open();
-                var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+                hasErrors = await ValidateQueryAndDescribeResultSetAsync(connection, rawSqlQuery, builder, errors, cancellationToken);
+
+                // if there are no errors check what parameters are expected
+                if (!hasErrors)
+                {
+                    await DescribeExpectedParametersAsync(connection, rawSqlQuery, builder, cancellationToken);
+                }
+            }
+
+            if (!hasErrors)
+            {
+                return Result.Success(builder.Build());
+            }
+            else
+            {
+                return Result.Failure<ValidatedQuery>(errors);
+            }
+        }
+
+        private static async Task<bool> ValidateQueryAndDescribeResultSetAsync(SqlConnection connection, string rawSqlQuery, ValidatedQuery.Builder builder, List<string> errors, CancellationToken cancellationToken)
+        {
+            var hasErrors = false;
+            var command = CreateQueryForDescribingFirstResultSet(connection, rawSqlQuery);
+            using (var reader = await command.ExecuteReaderAsync(cancellationToken))
+            {
                 while (reader.Read())
                 {
                     if (reader.IsDBNull(5))
@@ -106,13 +129,25 @@ namespace Trestel.SqlQueryAnalyzer.Providers.SqlServer
                 }
             }
 
-            if (!hasErrors)
+            return hasErrors;
+        }
+
+        private static async Task DescribeExpectedParametersAsync(SqlConnection connection, string rawSqlQuery, ValidatedQuery.Builder builder, CancellationToken cancellationToken)
+        {
+            // optimization - don't perform query if there are no parameters
+            if (!rawSqlQuery.Contains("@")) return;
+
+            var command = CreateQueryForDescribingMissingParameters(connection, rawSqlQuery);
+            using (var reader = await command.ExecuteReaderAsync(cancellationToken))
             {
-                return Result.Success(builder.Build());
-            }
-            else
-            {
-                return Result.Failure<ValidatedQuery>(errors);
+                while (reader.Read())
+                {
+                    var parameterName = reader.GetString(1);
+                    var parameterSqlType = (SqlServerType)reader.GetInt32(2);
+
+                    // TODO: nullability w.r.t. to input/output parameters
+                    builder.AddParameter(parameterName, parameterSqlType.GetEquivalentCLRType(true));
+                }
             }
         }
 
@@ -124,6 +159,15 @@ SELECT r.column_ordinal, r.name, r.system_type_id, r.is_nullable, r.is_hidden, r
 FROM sys.dm_exec_describe_first_result_set(@Sql, N'', NULL) r";
             command.CommandType = System.Data.CommandType.Text;
             command.Parameters.Add(new SqlParameter("@Sql", rawSqlQuery));
+            return command;
+        }
+
+        private static SqlCommand CreateQueryForDescribingMissingParameters(SqlConnection connection, string rawSqlQuery)
+        {
+            var command = connection.CreateCommand();
+            command.CommandText = "sp_describe_undeclared_parameters";
+            command.CommandType = System.Data.CommandType.StoredProcedure;
+            command.Parameters.Add(new SqlParameter("@tsql", rawSqlQuery));
             return command;
         }
     }

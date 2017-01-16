@@ -87,7 +87,7 @@ namespace Tests
             var expected = new DiagnosticResult
             {
                 Id = SqlQueryAnalyzerDiagnostic.UnusedColumnsInQueryResultDiagnosticId,
-                Message = "Following columns were found in result set, but are not being used:\nLastName",
+                Message = "Following columns were found in result set, but are not being used:" + Environment.NewLine + "LastName",
                 Severity = DiagnosticSeverity.Error,
                 Locations = new[] { new DiagnosticResultLocation("Test0.cs", 15, 34) }
             };
@@ -128,7 +128,7 @@ namespace Tests
             var expected = new DiagnosticResult
             {
                 Id = SqlQueryAnalyzerDiagnostic.MissingColumnsInQueryResultDiagnosticId,
-                Message = "Following columns were expected in result set, but were not found:\nLastName (string)",
+                Message = "Following columns were expected in result set, but were not found:" + Environment.NewLine + "LastName (string)",
                 Severity = DiagnosticSeverity.Error,
                 Locations = new[] { new DiagnosticResultLocation("Test0.cs", 15, 34) }
             };
