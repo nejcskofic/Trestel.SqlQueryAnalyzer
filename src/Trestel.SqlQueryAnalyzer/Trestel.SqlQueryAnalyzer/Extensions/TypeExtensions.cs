@@ -129,6 +129,36 @@ namespace Trestel.SqlQueryAnalyzer.Extensions
             }
         }
 
+        /// <summary>
+        /// Gets the properties with public getter.
+        /// </summary>
+        /// <param name="symbol">The symbol.</param>
+        /// <returns>Enumerable of properties with public getter</returns>
+        public static IEnumerable<IPropertySymbol> GetPropertiesWithPublicGetter(this INamedTypeSymbol symbol)
+        {
+            if (symbol == null) yield break;
+
+            var members = symbol.GetMembers();
+            for (int i = 0; i < members.Length; i++)
+            {
+                var m = members[i];
+                if (m.Kind != SymbolKind.Property) continue;
+                var prop = (IPropertySymbol)m;
+
+                if (prop.IsStatic || prop.IsIndexer || prop.DeclaredAccessibility != Accessibility.Public)
+                {
+                    continue;
+                }
+
+                if (prop.GetMethod == null || prop.GetMethod.DeclaredAccessibility != Accessibility.Public)
+                {
+                    continue;
+                }
+
+                yield return prop;
+            }
+        }
+
         private static ITypeSymbol ConvertFromRuntimeTypeInternal(Type type, Compilation compilation)
         {
             if (type.IsArray)

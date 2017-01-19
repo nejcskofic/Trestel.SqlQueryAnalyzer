@@ -28,6 +28,7 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure
 
             builder.RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (string connectionString) => new SqlServerQueryValidationProvider(connectionString));
 
+            builder.RegisterCallSiteAnalyzerInstance(new DapperAnalyzer());
             builder.RegisterCallSiteAnalyzerInstance(new GenericAnalyzer());
 
             return builder;

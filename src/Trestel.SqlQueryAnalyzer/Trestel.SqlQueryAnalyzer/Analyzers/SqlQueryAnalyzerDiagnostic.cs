@@ -9,6 +9,7 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Trestel.SqlQueryAnalyzer.Infrastructure.CallSiteAnalysis;
 using Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis;
+using Trestel.SqlQueryAnalyzer.Extensions;
 
 namespace Trestel.SqlQueryAnalyzer.Analyzers
 {
@@ -380,8 +381,11 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
         /// </summary>
         /// <param name="location">The location.</param>
         /// <param name="missingParameters">The missing parameters.</param>
-        /// <returns>Missing parameter diagnostic</returns>
-        internal static Diagnostic CreateMissingParameterDiagnostic(Location location, IList<ParameterInfo> missingParameters)
+        /// <param name="compilation">The compilation.</param>
+        /// <returns>
+        /// Missing parameter diagnostic
+        /// </returns>
+        internal static Diagnostic CreateMissingParameterDiagnostic(Location location, IList<ParameterInfo> missingParameters, Compilation compilation)
         {
             string parametersText;
             if (missingParameters == null)
@@ -396,7 +400,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
                     builder.AppendLine();
                     builder.Append(missingParameters[i].ParameterName);
                     builder.Append(" (");
-                    builder.Append(missingParameters[i].ParameterType.FullName);
+                    builder.Append(missingParameters[i].ParameterType.ConvertFromRuntimeType(compilation).ToDisplayString());
                     builder.Append(")");
                 }
 

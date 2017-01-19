@@ -146,7 +146,7 @@ namespace Trestel.SqlQueryAnalyzer.Providers.SqlServer
                     var parameterSqlType = (SqlServerType)reader.GetInt32(2);
 
                     // TODO: nullability w.r.t. to input/output parameters
-                    builder.AddParameter(parameterName, parameterSqlType.GetEquivalentCLRType(true));
+                    builder.AddParameter(parameterName.TrimStart('@'), parameterSqlType.GetEquivalentCLRType(true));
                 }
             }
         }

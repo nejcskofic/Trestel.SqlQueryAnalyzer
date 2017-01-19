@@ -118,6 +118,7 @@
     <Compile Include="Analyzers\SqlQueryAnalyzer.cs" />
     <Compile Include="Analyzers\SqlQueryAnalyzerDiagnostic.cs" />
     <Compile Include="AssemblyInfo.cs" />
+    <Compile Include="CallSiteAnalyzers\DapperAnalyzer.cs" />
     <Compile Include="CallSiteAnalyzers\GenericAnalyzer.cs" />
     <Compile Include="Common\Result.cs" />
     <Compile Include="Extensions\SyntaxNodeExtensions.cs" />

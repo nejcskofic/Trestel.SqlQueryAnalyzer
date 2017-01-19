@@ -259,7 +259,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
 
             if (missingParameters.Count > 0)
             {
-                context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateMissingParameterDiagnostic(targetNode.GetLocation(), missingParameters));
+                context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateMissingParameterDiagnostic(targetNode.GetLocation(), missingParameters, context.SemanticModel.Compilation));
             }
         }
 
