@@ -26,6 +26,9 @@ namespace TestHelper
         private static readonly MetadataReference TrestelDatabaseReference = MetadataReference.CreateFromFile(typeof(Trestel.Database.Sql).Assembly.Location);
         private static readonly MetadataReference SystemRuntimeFacadeReference = MetadataReference.CreateFromFile(Path.Combine(Path.GetDirectoryName(typeof(object).Assembly.Location), "System.Runtime.dll"));
         private static readonly MetadataReference SystemCollectionsFacadeReference = MetadataReference.CreateFromFile(Path.Combine(Path.GetDirectoryName(typeof(object).Assembly.Location), "System.Collections.dll"));
+        private static readonly MetadataReference DapperReference = MetadataReference.CreateFromFile(typeof(Dapper.SqlMapper).Assembly.Location);
+        private static readonly MetadataReference SystemDataReference = MetadataReference.CreateFromFile(typeof(System.Data.ConnectionState).Assembly.Location);
+        private static readonly MetadataReference SystemReference = MetadataReference.CreateFromFile(typeof(System.ComponentModel.Component).Assembly.Location);
 
         internal const string DefaultFilePathPrefix = "Test";
         internal const string CSharpDefaultFileExt = "cs";
@@ -158,12 +161,15 @@ namespace TestHelper
                 .CurrentSolution
                 .AddProject(projectId, TestProjectName, TestProjectName, language)
                 .AddMetadataReference(projectId, CorlibReference)
+                .AddMetadataReference(projectId, SystemReference)
                 .AddMetadataReference(projectId, SystemCoreReference)
                 .AddMetadataReference(projectId, CSharpSymbolsReference)
                 .AddMetadataReference(projectId, CodeAnalysisReference)
                 .AddMetadataReference(projectId, TrestelDatabaseReference)
                 .AddMetadataReference(projectId, SystemRuntimeFacadeReference)
-                .AddMetadataReference(projectId, SystemCollectionsFacadeReference);
+                .AddMetadataReference(projectId, SystemCollectionsFacadeReference)
+                .AddMetadataReference(projectId, DapperReference)
+                .AddMetadataReference(projectId, SystemDataReference);
 
             int count = 0;
             foreach (var source in sources)

@@ -2,11 +2,7 @@
 // Licensed under the MIT license. See LICENSE.txt file in the project root for full license information.
 
 using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Templates
 {
@@ -14,10 +10,11 @@ namespace Templates
     {
         public const string SimpleTemplate = @"
 using System;
+using System.Linq;
 using Trestel.Database;
 using Trestel.Database.Design;
 
-[assembly: DatabaseHint(@""Data Source=.\SQLEXPRESS2014;Initial Catalog=AdventureWorks2014;Integrated Security=True;"")]
+[assembly: DatabaseHint(@""<connection string>"")]
 
 namespace TestNamespace
 {{
@@ -25,20 +22,22 @@ namespace TestNamespace
     {{
         static void Main(string[] args)
         {{
-            var sql = Sql.From(""{0}"");
-            Console.WriteLine(sql);
+            {0}
         }}
     }}
+
+    {1}
 }}
 ";
 
-        public const string TemplateWithResultMapping = @"
+        public const string GenericQueryMethodTemplate = @"
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Trestel.Database;
 using Trestel.Database.Design;
 
-[assembly: DatabaseHint(@""Data Source =.\SQLEXPRESS2014; Initial Catalog = AdventureWorks2014; Integrated Security = True;"")]
+[assembly: DatabaseHint(@""<connection string>"")]
 
 namespace TestNamespace
 {{
@@ -46,40 +45,97 @@ namespace TestNamespace
     {{
         static void Main(string[] args)
         {{
-            foreach (var item in QueryMethodPlaceholder<{1}>(Sql.From(""{0}"")))
-            {{
-                Console.WriteLine(item);
-            }}
+            {0}
         }}
 
-        public IEnumerable<T> QueryMethodPlaceholder<T>(string query)
+        public static IEnumerable<T> GenericQueryMethod<T>(string query)
         {{
             return Enumerable.Empty<T>();
         }}
     }}
 
-    {2}
+    {1}
 }}
 ";
 
-        public static string GetSourceCodeFromSimpleTemplate(string rawSqlQuery)
-        {
-            if (String.IsNullOrEmpty(rawSqlQuery)) throw new ArgumentException("Argument is null or empty.", nameof(rawSqlQuery));
+        public const string DapperTemplate = @"
+using Dapper;
+using System;
+using System.Linq;
+using System.Data.SqlClient;
+using Trestel.Database;
+using Trestel.Database.Design;
 
-            return String.Format(CultureInfo.InvariantCulture, SimpleTemplate, EscapeQueryForInclusionInSource(rawSqlQuery));
+[assembly: DatabaseHint(@""<connection string>"")]
+
+namespace TestNamespace
+{{
+    class Program
+    {{
+        static void Main(string[] args)
+        {{
+            {0}
+        }}
+    }}
+
+    {1}
+}}
+";
+
+        public const string DapperAsyncTemplate = @"
+using Dapper;
+using System;
+using System.Linq;
+using System.Data.SqlClient;
+using System.Threading.Tasks;
+using Trestel.Database;
+using Trestel.Database.Design;
+
+[assembly: DatabaseHint(@""<connection string>"")]
+
+namespace TestNamespace
+{{
+    class Program
+    {{
+        static void Main(string[] args)
+        {{
+            MainAsync();
+        }}
+
+        private static async Task MainAsync()
+        {{
+            {0}
+        }}
+    }}
+
+    {1}
+}}
+";
+
+        public static string GetSourceCodeFromSimpleTemplate(string mainMethodImplementation, string additionalClass = "")
+        {
+            if (String.IsNullOrEmpty(mainMethodImplementation)) throw new ArgumentException("Argument is null or empty.", nameof(mainMethodImplementation));
+
+            return String.Format(CultureInfo.InvariantCulture, SimpleTemplate, mainMethodImplementation, additionalClass ?? "");
         }
 
-        public static string GetSourceCodeFromTemplateWithResultMapping(string rawSqlQuery, string returnType, string additionalClass = "")
+        public static string GetSourceCodeFromGenericMethodTemplate(string mainMethodImplementation, string additionalClass = "")
         {
-            if (String.IsNullOrEmpty(rawSqlQuery)) throw new ArgumentException("Argument is null or empty.", nameof(rawSqlQuery));
-            if (String.IsNullOrEmpty(returnType)) throw new ArgumentException("Argument is null or empty.", nameof(rawSqlQuery));
+            if (String.IsNullOrEmpty(mainMethodImplementation)) throw new ArgumentException("Argument is null or empty.", nameof(mainMethodImplementation));
 
-            return String.Format(CultureInfo.InvariantCulture, TemplateWithResultMapping, EscapeQueryForInclusionInSource(rawSqlQuery), returnType, additionalClass ?? "");
+            return String.Format(CultureInfo.InvariantCulture, GenericQueryMethodTemplate, mainMethodImplementation, additionalClass ?? "");
         }
 
-        private static string EscapeQueryForInclusionInSource(string query)
+        public static string GetSourceCodeFromDapperTemplate(string mainMethodImplementation, string additionalClass = "", bool isAsync = false)
         {
-            return query.Replace("\"", "\\\"\"");
+            if (String.IsNullOrEmpty(mainMethodImplementation)) throw new ArgumentException("Argument is null or empty.", nameof(mainMethodImplementation));
+
+            return String.Format(CultureInfo.InvariantCulture, isAsync ? DapperAsyncTemplate : DapperTemplate, mainMethodImplementation, additionalClass ?? "");
+        }
+
+        public static string EscapeQueryForInclusionInSource(string query)
+        {
+            return query?.Replace("\"", "\\\"\"");
         }
     }
 }

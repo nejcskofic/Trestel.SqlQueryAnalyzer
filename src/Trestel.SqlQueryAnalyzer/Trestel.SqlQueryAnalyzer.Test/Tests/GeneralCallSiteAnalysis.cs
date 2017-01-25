@@ -19,12 +19,16 @@ using Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis;
 namespace Tests
 {
     [TestFixture]
-    public class ResultMapping : SqlQueryDiagnosticVerifier
+    public class GeneralCallSiteAnalysis : SqlQueryDiagnosticVerifier
     {
         [Test]
         public void SimpleMappingOfTypes()
         {
             var query = "SELECT BusinessEntityID, Title, FirstName, MiddleName, LastName, ModifiedDate FROM Person.Person";
+            var mainMethod = $@"
+var query = GenericQueryMethod<Person>(Sql.From(""{query}""));
+Console.WriteLine(query.FirstOrDefault());
+";
             var additionalClass = @"
     class Person
     {
@@ -35,7 +39,7 @@ namespace Tests
         public DateTime ModifiedDate { get; set; }
     }
 ";
-            var source = SourceCodeTemplates.GetSourceCodeFromTemplateWithResultMapping(query, "Person", additionalClass);
+            var source = SourceCodeTemplates.GetSourceCodeFromGenericMethodTemplate(mainMethod, additionalClass);
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
@@ -49,6 +53,7 @@ namespace Tests
 
             var factory = ServiceFactory.New()
                 .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
+                .RegisterCallSiteAnalyzerInstance(new GenericAnalyzer())
                 .Build();
 
             VerifyCSharpDiagnostic(factory, source);
@@ -58,6 +63,10 @@ namespace Tests
         public void MissingColumnInResultObject()
         {
             var query = "SELECT BusinessEntityID, Title, FirstName, MiddleName, LastName, ModifiedDate FROM Person.Person";
+            var mainMethod = $@"
+var query = GenericQueryMethod<Person>(Sql.From(""{query}""));
+Console.WriteLine(query.FirstOrDefault());
+";
             var additionalClass = @"
     class Person
     {
@@ -67,7 +76,7 @@ namespace Tests
         public DateTime ModifiedDate { get; set; }
     }
 ";
-            var source = SourceCodeTemplates.GetSourceCodeFromTemplateWithResultMapping(query, "Person", additionalClass);
+            var source = SourceCodeTemplates.GetSourceCodeFromGenericMethodTemplate(mainMethod, additionalClass);
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
@@ -89,7 +98,7 @@ namespace Tests
                 Id = SqlQueryAnalyzerDiagnostic.UnusedColumnsInQueryResultDiagnosticId,
                 Message = "Following columns were found in result set, but are not being used:" + Environment.NewLine + "LastName",
                 Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 15, 34) }
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 17, 13) }
             };
 
             VerifyCSharpDiagnostic(factory, source, expected);
@@ -99,6 +108,10 @@ namespace Tests
         public void MissingColumnInQueryResultSet()
         {
             var query = "SELECT BusinessEntityID, Title, FirstName, MiddleName, ModifiedDate FROM Person.Person";
+            var mainMethod = $@"
+var query = GenericQueryMethod<Person>(Sql.From(""{query}""));
+Console.WriteLine(query.FirstOrDefault());
+";
             var additionalClass = @"
     class Person
     {
@@ -109,7 +122,7 @@ namespace Tests
         public DateTime ModifiedDate { get; set; }
     }
 ";
-            var source = SourceCodeTemplates.GetSourceCodeFromTemplateWithResultMapping(query, "Person", additionalClass);
+            var source = SourceCodeTemplates.GetSourceCodeFromGenericMethodTemplate(mainMethod, additionalClass);
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
@@ -130,7 +143,7 @@ namespace Tests
                 Id = SqlQueryAnalyzerDiagnostic.MissingColumnsInQueryResultDiagnosticId,
                 Message = "Following columns were expected in result set, but were not found:" + Environment.NewLine + "LastName (string)",
                 Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 15, 34) }
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 17, 13) }
             };
 
             VerifyCSharpDiagnostic(factory, source, expected);
@@ -140,6 +153,10 @@ namespace Tests
         public void TypeMissmatch()
         {
             var query = "SELECT BusinessEntityID, Title, FirstName, MiddleName, LastName, ModifiedDate FROM Person.Person";
+            var mainMethod = $@"
+var query = GenericQueryMethod<Person>(Sql.From(""{query}""));
+Console.WriteLine(query.FirstOrDefault());
+";
             var additionalClass = @"
     class Person
     {
@@ -150,7 +167,7 @@ namespace Tests
         public string ModifiedDate { get; set; }
     }
 ";
-            var source = SourceCodeTemplates.GetSourceCodeFromTemplateWithResultMapping(query, "Person", additionalClass);
+            var source = SourceCodeTemplates.GetSourceCodeFromGenericMethodTemplate(mainMethod, additionalClass);
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
@@ -172,7 +189,7 @@ namespace Tests
                 Id = SqlQueryAnalyzerDiagnostic.PropertyTypeMismatchDiagnosticId,
                 Message = "For column 'ModifiedDate' expected type 'System.DateTime', but found type 'string'.",
                 Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 15, 34) }
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 17, 13) }
             };
 
             VerifyCSharpDiagnostic(factory, source, expected);
@@ -182,6 +199,10 @@ namespace Tests
         public void AssignToNullableOrObject()
         {
             var query = "SELECT BusinessEntityID, Title, FirstName, MiddleName, LastName, ModifiedDate FROM Person.Person";
+            var mainMethod = $@"
+var query = GenericQueryMethod<Person>(Sql.From(""{query}""));
+Console.WriteLine(query.FirstOrDefault());
+";
             var additionalClass = @"
     class Person
     {
@@ -192,7 +213,7 @@ namespace Tests
         public DateTime? ModifiedDate { get; set; }
     }
 ";
-            var test = SourceCodeTemplates.GetSourceCodeFromTemplateWithResultMapping(query, "Person", additionalClass);
+            var test = SourceCodeTemplates.GetSourceCodeFromGenericMethodTemplate(mainMethod, additionalClass);
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
@@ -206,35 +227,21 @@ namespace Tests
 
             var factory = ServiceFactory.New()
                 .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
+                .RegisterCallSiteAnalyzerInstance(new GenericAnalyzer())
                 .Build();
 
             VerifyCSharpDiagnostic(factory, test);
         }
 
         [Test]
-        public void AssignSingleColumn()
-        {
-            var query = "SELECT rowguid FROM Person.Person";
-            var source = SourceCodeTemplates.GetSourceCodeFromTemplateWithResultMapping(query, "Guid");
-
-            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
-            mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
-                        .AddOutputColumn("rowguid", typeof(Guid)).Build())));
-
-            var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
-                .Build();
-
-            VerifyCSharpDiagnostic(factory, source);
-        }
-
-        [Test]
         public void SingleColumn()
         {
             var query = "SELECT rowguid FROM Person.Person";
-            var source = SourceCodeTemplates.GetSourceCodeFromTemplateWithResultMapping(query, "Guid");
+            var mainMethod = $@"
+var query = GenericQueryMethod<Guid>(Sql.From(""{query}""));
+Console.WriteLine(query.FirstOrDefault());
+";
+            var source = SourceCodeTemplates.GetSourceCodeFromGenericMethodTemplate(mainMethod);
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
@@ -244,6 +251,7 @@ namespace Tests
 
             var factory = ServiceFactory.New()
                 .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
+                .RegisterCallSiteAnalyzerInstance(new GenericAnalyzer())
                 .Build();
 
             VerifyCSharpDiagnostic(factory, source);
@@ -253,7 +261,11 @@ namespace Tests
         public void SingleNullableColumn()
         {
             var query = "SELECT rowguid FROM Person.Person";
-            var source = SourceCodeTemplates.GetSourceCodeFromTemplateWithResultMapping(query, "Guid?");
+            var mainMethod = $@"
+var query = GenericQueryMethod<Guid?>(Sql.From(""{query}""));
+Console.WriteLine(query.FirstOrDefault());
+";
+            var source = SourceCodeTemplates.GetSourceCodeFromGenericMethodTemplate(mainMethod);
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
@@ -263,6 +275,7 @@ namespace Tests
 
             var factory = ServiceFactory.New()
                 .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
+                .RegisterCallSiteAnalyzerInstance(new GenericAnalyzer())
                 .Build();
 
             VerifyCSharpDiagnostic(factory, source);
@@ -272,7 +285,11 @@ namespace Tests
         public void SingleByteArrayColumn()
         {
             var query = "SELECT RecordVersion FROM Person.Person";
-            var source = SourceCodeTemplates.GetSourceCodeFromTemplateWithResultMapping(query, "byte[]");
+            var mainMethod = $@"
+var query = GenericQueryMethod<byte[]>(Sql.From(""{query}""));
+Console.WriteLine(query.FirstOrDefault());
+";
+            var source = SourceCodeTemplates.GetSourceCodeFromGenericMethodTemplate(mainMethod);
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
@@ -282,6 +299,7 @@ namespace Tests
 
             var factory = ServiceFactory.New()
                 .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
+                .RegisterCallSiteAnalyzerInstance(new GenericAnalyzer())
                 .Build();
 
             VerifyCSharpDiagnostic(factory, source);
@@ -291,7 +309,11 @@ namespace Tests
         public void SingleByteArrayColumnToString()
         {
             var query = "SELECT RecordVersion FROM Person.Person";
-            var source = SourceCodeTemplates.GetSourceCodeFromTemplateWithResultMapping(query, "string");
+            var mainMethod = $@"
+var query = GenericQueryMethod<string>(Sql.From(""{query}""));
+Console.WriteLine(query.FirstOrDefault());
+";
+            var source = SourceCodeTemplates.GetSourceCodeFromGenericMethodTemplate(mainMethod);
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
@@ -309,7 +331,7 @@ namespace Tests
                 Id = SqlQueryAnalyzerDiagnostic.TypeMismatchDiagnosticId,
                 Message = "Expected type 'byte[]', but found type 'string'.",
                 Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 15, 34) }
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 17, 13) }
             };
 
             VerifyCSharpDiagnostic(factory, source, expected);
@@ -319,7 +341,11 @@ namespace Tests
         public void SingleColumnWithTypeMissmatch()
         {
             var query = "SELECT rowguid FROM Person.Person";
-            var source = SourceCodeTemplates.GetSourceCodeFromTemplateWithResultMapping(query, "string");
+            var mainMethod = $@"
+var query = GenericQueryMethod<string>(Sql.From(""{query}""));
+Console.WriteLine(query.FirstOrDefault());
+";
+            var source = SourceCodeTemplates.GetSourceCodeFromGenericMethodTemplate(mainMethod);
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
@@ -337,7 +363,7 @@ namespace Tests
                 Id = SqlQueryAnalyzerDiagnostic.TypeMismatchDiagnosticId,
                 Message = "Expected type 'System.Guid', but found type 'string'.",
                 Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 15, 34) }
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 17, 13) }
             };
 
             VerifyCSharpDiagnostic(factory, source, expected);

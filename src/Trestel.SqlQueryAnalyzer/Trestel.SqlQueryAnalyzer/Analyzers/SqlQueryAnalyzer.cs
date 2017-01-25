@@ -109,7 +109,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
             }
 
             // perform local analyis
-            var methodNode = node.Parent.Parent.Parent as InvocationExpressionSyntax; // InvocationExpressionSyntax -> ArgumentSyntax -> ArgumentListSyntax -> InvocationExpressionSyntax
+            var methodNode = GetParentCallSiteSyntax(node);
             Result<NormalizedCallSite> callSiteAnalysisResult = Result<NormalizedCallSite>.Empty;
             if (methodNode != null)
             {
@@ -325,6 +325,19 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
             {
                 context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateUnusedColumnsInQueryResultDiagnostic(targetNode.GetLocation(), unusedColumns));
             }
+        }
+
+        private static InvocationExpressionSyntax GetParentCallSiteSyntax(SyntaxNode node)
+        {
+            node = node.Parent;
+            while (node != null && !(node is ArgumentSyntax))
+            {
+                if (!(node is CastExpressionSyntax)) return null;
+                node = node.Parent;
+            }
+
+            // ArgumentSyntax -> ArgumentListSyntax -> InvocationExpressionSyntax
+            return node != null ? node.Parent.Parent as InvocationExpressionSyntax : null;
         }
     }
 }

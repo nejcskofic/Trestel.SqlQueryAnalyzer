@@ -46,7 +46,11 @@ namespace TestNamespace
         public void ValidateParsing()
         {
             var query = "SELECT BusinessEntityID, Title, FirstName, LastName FROM Person.Person";
-            var source = SourceCodeTemplates.GetSourceCodeFromSimpleTemplate(query);
+            var mainMethod = $@"
+var sql = Sql.From(""{query}"");
+Console.WriteLine(sql);
+";
+            var source = SourceCodeTemplates.GetSourceCodeFromSimpleTemplate(mainMethod);
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider.Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>())).Returns(Task.FromResult(Result.Success(ValidatedQuery.New().Build())));
@@ -65,12 +69,16 @@ namespace TestNamespace
         public void ValidateErrorSyntaxErrorReporting()
         {
             var query = "SELECTA BusinessEntityID, Title, FirstName, LastName FROM Person.Person";
-            var source = SourceCodeTemplates.GetSourceCodeFromSimpleTemplate(query);
+            var mainMethod = $@"
+var sql = Sql.From(""{query}"");
+Console.WriteLine(sql);
+";
+            var source = SourceCodeTemplates.GetSourceCodeFromSimpleTemplate(mainMethod);
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
                 .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(Result.Failure<ValidatedQuery>(new List<string>() { "Incorrect syntax near the keyword 'FROM'." })));
+                .Returns(Task.FromResult(Result.Failure<ValidatedQuery>("Incorrect syntax near the keyword 'FROM'.")));
 
             var factory = ServiceFactory.New()
                 .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
@@ -81,7 +89,7 @@ namespace TestNamespace
                 Id = SqlQueryAnalyzerDiagnostic.ErrorsInSqlQueryDiagnosticId,
                 Message = "There are following errors in SQL query:" + Environment.NewLine + "Incorrect syntax near the keyword 'FROM'.",
                 Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 14, 23) }
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 16, 11) }
             };
 
             VerifyCSharpDiagnostic(factory, source, expected);

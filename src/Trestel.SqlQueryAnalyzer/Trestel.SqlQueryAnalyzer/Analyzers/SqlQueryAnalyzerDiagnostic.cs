@@ -7,9 +7,9 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
+using Trestel.SqlQueryAnalyzer.Extensions;
 using Trestel.SqlQueryAnalyzer.Infrastructure.CallSiteAnalysis;
 using Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis;
-using Trestel.SqlQueryAnalyzer.Extensions;
 
 namespace Trestel.SqlQueryAnalyzer.Analyzers
 {

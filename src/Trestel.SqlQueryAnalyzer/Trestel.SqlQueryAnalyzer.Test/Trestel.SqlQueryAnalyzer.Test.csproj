@@ -38,6 +38,10 @@
       <HintPath>..\..\packages\Castle.Core.3.3.3\lib\net45\Castle.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Dapper, Version=1.50.2.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\Dapper.1.50.2\lib\net451\Dapper.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Microsoft.CodeAnalysis, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Microsoft.CodeAnalysis.Common.1.0.1\lib\net45\Microsoft.CodeAnalysis.dll</HintPath>
       <Private>True</Private>
@@ -112,9 +116,11 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Templates\SourceCodeTemplates.cs" />
     <Compile Include="Tests\CachingServiceUsage.cs" />
+    <Compile Include="Tests\DapperSpecificCallSiteAnalysis.cs" />
     <Compile Include="Tests\DatabaseHintAttributeUsage.cs" />
     <Compile Include="Tests\MemoryCacheUsage.cs" />
-    <Compile Include="Tests\ResultMapping.cs" />
+    <Compile Include="Tests\NonSpecificCallSiteAnalysis.cs" />
+    <Compile Include="Tests\GeneralCallSiteAnalysis.cs" />
     <Compile Include="Tests\ServiceFactoryUsage.cs" />
     <Compile Include="Tests\SqlSyntax.cs" />
     <Compile Include="Verifiers\CodeFixVerifier.cs" />
