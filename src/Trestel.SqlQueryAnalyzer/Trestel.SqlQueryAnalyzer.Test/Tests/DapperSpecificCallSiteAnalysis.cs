@@ -49,6 +49,33 @@ using (var connection = new SqlConnection(""<connection string>""))
         }
 
         [Test]
+        public void ValidateDbStringParameter()
+        {
+            var query = "DELETE FROM Person.Person WHERE PersonType = @p1";
+            var mainMethod = $@"
+using (var connection = new SqlConnection(""<connection string>""))
+{{
+    connection.Execute(Sql.From(""{query}""), new {{ p1 = new DbString {{ IsAnsi = true, Value = ""EM"" }} }});
+}}
+";
+
+            var source = SourceCodeTemplates.GetSourceCodeFromDapperTemplate(mainMethod);
+
+            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+            mockupValidationProvider
+                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
+                        .AddParameter("p1", typeof(string)).Build())));
+
+            var factory = ServiceFactory.New()
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
+                .RegisterCallSiteAnalyzerInstance(new DapperAnalyzer())
+                .Build();
+
+            VerifyCSharpDiagnostic(factory, source);
+        }
+
+        [Test]
         public void ValidateSingleMissingParameter()
         {
             var query = "DELETE FROM Person.Person WHERE BusinessEntityID = @p1";

@@ -86,7 +86,6 @@ namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
             if (paramsExpressionSyntax == null) return;
 
             // TODO DynamicParameters for type
-            // DbString property type
             var paramsType = model.GetTypeInfo(paramsExpressionSyntax).Type;
             if (paramsType == null || paramsType.TypeKind == TypeKind.Error) return;
 
@@ -111,7 +110,14 @@ namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
 
             foreach (var prop in namedParamsType.GetPropertiesWithPublicGetter())
             {
-                builder.WithParameter(prop.Name, prop.Type);
+                var type = prop.Type;
+                if (type.Name == "DbString" && type.ContainingNamespace.Name == "Dapper")
+                {
+                    // handle DbString as normal string type
+                    type = model.Compilation.GetSpecialType(SpecialType.System_String);
+                }
+
+                builder.WithParameter(prop.Name, type);
             }
         }
 
