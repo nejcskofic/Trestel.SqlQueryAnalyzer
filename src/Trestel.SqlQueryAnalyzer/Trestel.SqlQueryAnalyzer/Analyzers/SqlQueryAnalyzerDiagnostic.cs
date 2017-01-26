@@ -15,75 +15,78 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
 {
     /// <summary>
     /// Helper class containing supported diagnostics for <see cref="SqlQueryAnalyzer"/> and methods for creating those diagnostics.
+    /// Classes:
+    /// SQLA1xx - General failures
+    /// SQLA2xx - SQL syntax failures
+    /// SQLA3xx - Parameter mapping errors
+    /// SQLA4xx - Result set mapping errors
     /// </summary>
     public static class SqlQueryAnalyzerDiagnostic
     {
-        // TODO: Add error type when target type does not contain any properties (bug in provider or bug in code)
-
         /// <summary>
         /// The category name
         /// </summary>
-        public const string CategoryName = "SQL";
+        public const string CategoryName = "SQL Analysis";
 
         /// <summary>
         /// The failed to validate diagnostic identifier
         /// </summary>
-        public const string FailedToValidateDiagnosticId = "SQL0001";
+        public const string FailedToValidateDiagnosticId = "SQLA101";
 
         /// <summary>
         /// The errors in SQL query diagnostic identifier
         /// </summary>
-        public const string ErrorsInSqlQueryDiagnosticId = "SQL0002";
+        public const string ErrorsInSqlQueryDiagnosticId = "SQLA201";
 
         /// <summary>
         /// The unsupported diagnostic identifier
         /// </summary>
-        public const string UnsupportedDiagnosticId = "SQL0003";
+        public const string UnsupportedDiagnosticId = "SQLA102";
 
         /// <summary>
         /// The missing columns in query result diagnostic identifier
         /// </summary>
-        public const string MissingColumnsInQueryResultDiagnosticId = "SQL0004";
+        public const string MissingColumnsInQueryResultDiagnosticId = "SQLA401";
 
         /// <summary>
         /// The unused columns in query result diagnostic identifier
         /// </summary>
-        public const string UnusedColumnsInQueryResultDiagnosticId = "SQL0005";
+        public const string UnusedColumnsInQueryResultDiagnosticId = "SQLA402";
 
         /// <summary>
         /// The mismatch between property types diagnostic identifier
         /// </summary>
-        public const string PropertyTypeMismatchDiagnosticId = "SQL0006";
+        public const string PropertyTypeMismatchDiagnosticId = "SQLA403";
 
         /// <summary>
         /// The mismatch between types diagnostic identifier
         /// </summary>
-        public const string TypeMismatchDiagnosticId = "SQL0007";
+        public const string TypeMismatchDiagnosticId = "SQLA404";
 
         /// <summary>
         /// The expected single column in query result diagnostic identifier
         /// </summary>
-        public const string ExpectedSingleColumnInQueryResultDiagnosticId = "SQL0008";
+        public const string ExpectedSingleColumnInQueryResultDiagnosticId = "SQLA405";
 
         /// <summary>
         /// The missing database hint attribute diagnostic identifier
         /// </summary>
-        public const string MissingDatabaseHintAttributeDiagnosticId = "SQL0009";
+        public const string MissingDatabaseHintAttributeDiagnosticId = "SQLA103";
 
         /// <summary>
         /// The parameter type mismatch diagnostic identifier
         /// </summary>
-        public const string ParameterTypeMismatchDiagnosticId = "SQL0010";
+        public const string ParameterTypeMismatchDiagnosticId = "SQLA301";
 
         /// <summary>
         /// The missing parameter diagnostic identifier
         /// </summary>
-        public const string MissingParameterDiagnosticId = "SQL0011";
+        public const string MissingParameterDiagnosticId = "SQLA302";
 
         /// <summary>
         /// The unused parameter diagnostic identifier
         /// </summary>
-        public const string UnusedParameterDiagnosticId = "SQL0012";
+        public const string UnusedParameterDiagnosticId = "SQLA303";
 
         private static readonly DiagnosticDescriptor FailedToValidateDescriptor = new DiagnosticDescriptor(
             FailedToValidateDiagnosticId,
