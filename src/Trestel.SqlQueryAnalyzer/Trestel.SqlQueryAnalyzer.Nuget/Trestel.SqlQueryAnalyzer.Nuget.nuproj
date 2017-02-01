@@ -23,14 +23,26 @@
     <Title>Trestel.SqlQueryAnalyzer</Title>
     <Authors>Nejc Skofic</Authors>
     <Owners>Nejc Skofic</Owners>
-    <Summary>Helper library for defining raw SQL queries with accompanying analyzer for correctness.</Summary>
-    <Description>Adds simple library which contains Sql class which is used to wrap raw SQL queries. With DatabaseHint attribute you define connection string to development database, and analyzer will check for correctness all such queries (syntax and object usage).</Description>
+    <Summary>Helper library for wrapping raw SQL queries with accompanying analyzer for correctness.</Summary>
+    <Description>
+      This package contains simple utility library for wrapping raw SQL queries and C# code analyzer for correctness analysis.
+      &#xD;&#xA;
+      &#xD;&#xA;Currently supports following features:
+      &#xD;&#xA;- Syntax analysis and object usage of SQL queries
+      &#xD;&#xA;- Analysis of provided/expected parameters
+      &#xD;&#xA;  - Currently implemented only for Dapper functions
+      &#xD;&#xA;- Analysis of expected/provided result set
+      &#xD;&#xA;
+      &#xD;&#xA;Analyzer works only with Microsoft SQL Server 2012 or newer and Azure SQL Database. Check project site wiki for explanation of this limitation.
+      &#xD;&#xA;
+      &#xD;&#xA;Check project site for usage examples and documentation.
+      &#xD;&#xA;
+      &#xD;&#xA;This package is still in development and new features will be added. If you find any issue or have a suggestion, please report them on the project site.
+  </Description>
     <ReleaseNotes>
     </ReleaseNotes>
-    <ProjectUrl>
-    </ProjectUrl>
-    <LicenseUrl>
-    </LicenseUrl>
+    <ProjectUrl>https://github.com/nejcskofic/Trestel.SqlQueryAnalyzer</ProjectUrl>
+    <LicenseUrl>https://github.com/nejcskofic/Trestel.SqlQueryAnalyzer/blob/master/LICENSE.txt</LicenseUrl>
     <Copyright>Copyright © 2017 Nejc Skofic</Copyright>
     <Tags>SQL, query, analyzer, correctness, syntax, compile-time</Tags>
   </PropertyGroup>
