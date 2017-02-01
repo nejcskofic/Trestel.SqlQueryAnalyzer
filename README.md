@@ -81,10 +81,6 @@ Result set mapping errors | SQLA401 | One or more columns are not returned by SQ
  | SQLA404 | Type does not match (for single column result set which are mapped to simple type). Exact error is displayed.
  | SQLA405 | Code expects single column result but query returns multiple columns. Exact error is displayed.
 
-## Limitations
-* Query inside _SQL.From_ method must be string literal, expressions are not supported (even if expression is as simple as _"..." + "..."_).
-* Any custom mappings that might be defined in code (for example, by using _Dapper.SqlMapper.AddTypeMap(System.Type, System.Data.DbType)_ or _Dapper.SqlMapper.AddTypeHandler(System.Type, Dapper.SqlMapper.ITypeHandler)_ will not be picked up and analyser might report incorrect diagnostics.
-
-## Remarks
-* _DatabaseHint_ attribute has [ConditionalAttribute](https://msdn.microsoft.com/en-us/library/system.diagnostics.conditionalattribute(v=vs.110).aspx) defined and will not be compiled to MSIL, therefore it will not be part of produced assemblies and design time connection string will not be present in those assemblies.
+## License
+MIT
 
