@@ -19,8 +19,8 @@
   <Import Project="$(NuProjPath)\NuProj.props" Condition="Exists('$(NuProjPath)\NuProj.props')" />
   <PropertyGroup Label="Configuration">
     <Id>Trestel.SqlQueryAnalyzer</Id>
-    <Version>0.0.1</Version>
-    <Title>Trestel.SqlQueryAnalyzer.Nuget</Title>
+    <Version>0.1.0</Version>
+    <Title>Trestel.SqlQueryAnalyzer</Title>
     <Authors>Nejc Skofic</Authors>
     <Owners>Nejc Skofic</Owners>
     <Summary>Helper library for defining raw SQL queries with accompanying analyzer for correctness.</Summary>
