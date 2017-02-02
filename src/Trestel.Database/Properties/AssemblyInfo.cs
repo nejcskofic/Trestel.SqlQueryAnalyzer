@@ -9,3 +9,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 
 [assembly: ComVisible(false)]
+
+#if PUBLISH
+[assembly: AssemblyKeyFile("..\\trestel.snk")]
+#endif

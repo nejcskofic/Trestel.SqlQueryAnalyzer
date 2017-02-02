@@ -5,6 +5,10 @@
       <Configuration>Debug</Configuration>
       <Platform>AnyCPU</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Publish|AnyCPU">
+      <Configuration>Publish</Configuration>
+      <Platform>AnyCPU</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|AnyCPU">
       <Configuration>Release</Configuration>
       <Platform>AnyCPU</Platform>
@@ -25,19 +29,18 @@
     <Owners>Nejc Skofic</Owners>
     <Summary>Helper library for wrapping raw SQL queries with accompanying analyzer for correctness.</Summary>
     <Description>
-      This package contains simple utility library for wrapping raw SQL queries and C# code analyzer for correctness analysis.
-      &#xD;&#xA;
-      &#xD;&#xA;Currently supports following features:
-      &#xD;&#xA;- Syntax analysis and object usage of SQL queries
-      &#xD;&#xA;- Analysis of provided/expected parameters
-      &#xD;&#xA;  - Currently implemented only for Dapper functions
-      &#xD;&#xA;- Analysis of expected/provided result set
-      &#xD;&#xA;
-      &#xD;&#xA;Analyzer works only with Microsoft SQL Server 2012 or newer and Azure SQL Database. Check project site wiki for explanation of this limitation.
-      &#xD;&#xA;
-      &#xD;&#xA;Check project site for usage examples and documentation.
-      &#xD;&#xA;
-      &#xD;&#xA;This package is still in development and new features will be added. If you find any issue or have a suggestion, please report them on the project site.
+This package contains simple utility library for wrapping raw SQL queries and C# code analyzer for correctness analysis.
+      
+Currently supports following features:
+- Syntax analysis and object usage of SQL queries
+- Analysis of provided/expected parameters (currently implemented only for Dapper functions)
+- Analysis of expected/provided result set
+      
+Analyzer works only with Microsoft SQL Server 2012 or newer and Azure SQL Database. Check project site wiki for explanation of this limitation.
+
+Check project site for usage examples and documentation.
+      
+This package is still in development and new features will be added. If you find any issue or have a suggestion, please report them on the project site.
   </Description>
     <ReleaseNotes>
     </ReleaseNotes>

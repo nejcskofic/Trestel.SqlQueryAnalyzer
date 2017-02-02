@@ -38,10 +38,21 @@
     <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
+    <SignAssembly>false</SignAssembly>
   </PropertyGroup>
   <PropertyGroup>
     <AssemblyOriginatorKeyFile>..\..\trestel.pfx</AssemblyOriginatorKeyFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Publish|AnyCPU'">
+    <OutputPath>bin\Publish\</OutputPath>
+    <DefineConstants>TRACE;CODE_ANALYSIS;ANALYZER;PUBLISH</DefineConstants>
+    <DocumentationFile>bin\Release\Trestel.SqlQueryAnalyzer.XML</DocumentationFile>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <ErrorReport>prompt</ErrorReport>
+    <CodeAnalysisRuleSet>..\..\trestel.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CodeAnalysis, Version=1.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -112,12 +123,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\..\AssemblyInfo.cs">
+      <Link>AssemblyInfo.cs</Link>
+    </Compile>
     <Compile Include="..\..\Trestel.Database\Design\DatabaseType.cs">
       <Link>Design\DatabaseType.cs</Link>
     </Compile>
     <Compile Include="Analyzers\SqlQueryAnalyzer.cs" />
     <Compile Include="Analyzers\SqlQueryAnalyzerDiagnostic.cs" />
-    <Compile Include="AssemblyInfo.cs" />
     <Compile Include="CallSiteAnalyzers\DapperAnalyzer.cs" />
     <Compile Include="CallSiteAnalyzers\GenericAnalyzer.cs" />
     <Compile Include="Common\Result.cs" />
