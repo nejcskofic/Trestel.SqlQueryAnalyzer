@@ -1,5 +1,6 @@
 # Trestel.SqlQueryAnalyzer
 [![NuGet](https://img.shields.io/nuget/v/Trestel.SqlQueryAnalyzer.svg)](https://www.nuget.org/packages/Trestel.SqlQueryAnalyzer/)
+[![AppVeyor branch](https://img.shields.io/appveyor/ci/nejcskofic/trestel-sqlqueryanalyzer/master.svg)](https://ci.appveyor.com/project/nejcskofic/trestel-sqlqueryanalyzer)
 
 Library for static analysis of raw SQL queries in C# code built upon .NET compiler platform (aka Roslyn).
 
