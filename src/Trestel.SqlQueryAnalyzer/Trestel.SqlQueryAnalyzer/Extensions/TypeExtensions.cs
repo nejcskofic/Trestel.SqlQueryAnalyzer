@@ -87,6 +87,35 @@ namespace Trestel.SqlQueryAnalyzer.Extensions
         }
 
         /// <summary>
+        /// If type symbol derives from <see cref="IEnumerable{T}"/> and type T is bound, return bound type T.
+        /// </summary>
+        /// <param name="type">The type.</param>
+        /// <returns>Containing type from <see cref="IEnumerable{T}"/></returns>
+        public static ITypeSymbol TryGetUnderlyingTypeFromIEnumerableT(this ITypeSymbol type)
+        {
+            if (type == null) return null;
+
+            if (type.TypeKind == TypeKind.Array)
+            {
+                return ((IArrayTypeSymbol)type).ElementType;
+            }
+
+            for (int i = 0; i < type.AllInterfaces.Length; i++)
+            {
+                var f = type.AllInterfaces[i];
+                if (f.IsGenericType &&
+                    f.TypeParameters.Length == 1 &&
+                    f.ConstructedFrom != null &&
+                    f.ConstructedFrom.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T)
+                {
+                    return f.TypeArguments[0];
+                }
+            }
+
+            return null;
+        }
+
+        /// <summary>
         /// Determines whether this instance can assign the specified source.
         /// </summary>
         /// <param name="source">The source.</param>

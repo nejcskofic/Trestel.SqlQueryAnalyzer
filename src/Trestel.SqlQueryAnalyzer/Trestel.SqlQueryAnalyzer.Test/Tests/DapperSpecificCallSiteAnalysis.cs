@@ -104,7 +104,7 @@ using (var connection = new SqlConnection(""<connection string>""))
                 Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
                 Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
                 Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 20, 5) }
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 5) }
             };
 
             VerifyCSharpDiagnostic(factory, source, expected);
@@ -140,7 +140,7 @@ using (var connection = new SqlConnection(""<connection string>""))
                 Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
                 Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p2 (bool?)",
                 Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 20, 5) }
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 5) }
             };
 
             VerifyCSharpDiagnostic(factory, source, expected);
@@ -174,7 +174,7 @@ using (var connection = new SqlConnection(""<connection string>""))
                 Id = SqlQueryAnalyzerDiagnostic.UnusedParameterDiagnosticId,
                 Message = "Following parameters are present but not required:" + Environment.NewLine + "p1",
                 Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 20, 5) }
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 5) }
             };
 
             VerifyCSharpDiagnostic(factory, source, expected);
@@ -209,14 +209,14 @@ using (var connection = new SqlConnection(""<connection string>""))
                 Id = SqlQueryAnalyzerDiagnostic.UnusedParameterDiagnosticId,
                 Message = "Following parameters are present but not required:" + Environment.NewLine + "p2",
                 Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 20, 5) }
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 5) }
             };
             var expected2 = new DiagnosticResult
             {
                 Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
                 Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
                 Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 20, 5) }
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 5) }
             };
 
             VerifyCSharpDiagnostic(factory, source, expected1, expected2);
@@ -251,7 +251,88 @@ using (var connection = new SqlConnection(""<connection string>""))
                 Id = SqlQueryAnalyzerDiagnostic.ParameterTypeMismatchDiagnosticId,
                 Message = "For parameter 'p1' expected type 'int?', but found type 'bool'.",
                 Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 20, 5) }
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 5) }
+            };
+
+            VerifyCSharpDiagnostic(factory, source, expected);
+        }
+
+        [Test]
+        public void ExecuteCommandMultipleTimesViaArray()
+        {
+            var query = "INSERT INTO Person.Person(BusinessEntityID, FirstName, LastName) VALUES (@p1, @p2, @p3)";
+            var mainMethod = $@"
+using (var connection = new SqlConnection(""<connection string>""))
+{{
+    connection.Execute(Sql.From(""{query}""), new[] {{ new {{ p1 = 1, p2 = ""Alice""}}, new {{ p1 = 2, p2 = ""Bob"" }} }});
+}}
+";
+
+            var source = SourceCodeTemplates.GetSourceCodeFromDapperTemplate(mainMethod);
+
+            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+            mockupValidationProvider
+                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
+                    .AddParameter("p1", typeof(int?))
+                    .AddParameter("p2", typeof(string))
+                    .AddParameter("p3", typeof(string)).Build())));
+
+            var factory = ServiceFactory.New()
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
+                .RegisterCallSiteAnalyzerInstance(new DapperAnalyzer())
+                .Build();
+
+            var expected = new DiagnosticResult
+            {
+                Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
+                Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p3 (string)",
+                Severity = DiagnosticSeverity.Error,
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 5) }
+            };
+
+            VerifyCSharpDiagnostic(factory, source, expected);
+        }
+
+        [Test]
+        public void ExecuteCommandMultipleTimesViaList()
+        {
+            var query = "INSERT INTO Person.Person(BusinessEntityID, FirstName, LastName) VALUES (@BusinessEntityID, @FirstName, @LastName)";
+            var mainMethod = $@"
+using (var connection = new SqlConnection(""<connection string>""))
+{{
+    connection.Execute(Sql.From(""{query}""), new List<Person> {{ new Person {{ BusinessEntityID = 1, FirstName = ""Alice""}}, new Person {{ BusinessEntityID = 2, FirstName = ""Bob"" }} }});
+}}
+";
+            var additionalClass = @"
+public class Person
+{
+    public int BusinessEntityID { get; set; }
+    public string FirstName { get; set; }
+}
+";
+
+            var source = SourceCodeTemplates.GetSourceCodeFromDapperTemplate(mainMethod, additionalClass);
+
+            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+            mockupValidationProvider
+                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
+                    .AddParameter("BusinessEntityID", typeof(int?))
+                    .AddParameter("FirstName", typeof(string))
+                    .AddParameter("LastName", typeof(string)).Build())));
+
+            var factory = ServiceFactory.New()
+                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
+                .RegisterCallSiteAnalyzerInstance(new DapperAnalyzer())
+                .Build();
+
+            var expected = new DiagnosticResult
+            {
+                Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
+                Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "LastName (string)",
+                Severity = DiagnosticSeverity.Error,
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 5) }
             };
 
             VerifyCSharpDiagnostic(factory, source, expected);
@@ -321,7 +402,7 @@ using (var connection = new SqlConnection(""<connection string>""))
                 Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
                 Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
                 Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 20, 25) }
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 25) }
             };
 
             VerifyCSharpDiagnostic(factory, source, expected);
@@ -392,7 +473,7 @@ using (var connection = new SqlConnection(""<connection string>""))
                 Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
                 Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
                 Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 20, 13) }
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 13) }
             };
 
             VerifyCSharpDiagnostic(factory, source, expected);
@@ -464,7 +545,7 @@ using (var connection = new SqlConnection(""<connection string>""))
                 Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
                 Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
                 Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 20, 13) }
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 13) }
             };
 
             VerifyCSharpDiagnostic(factory, source, expected);
@@ -536,7 +617,7 @@ using (var connection = new SqlConnection(""<connection string>""))
                 Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
                 Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
                 Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 20, 13) }
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 13) }
             };
 
             VerifyCSharpDiagnostic(factory, source, expected);
@@ -608,7 +689,7 @@ using (var connection = new SqlConnection(""<connection string>""))
                 Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
                 Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
                 Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 20, 13) }
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 13) }
             };
 
             VerifyCSharpDiagnostic(factory, source, expected);
@@ -679,7 +760,7 @@ using (var connection = new SqlConnection(""<connection string>""))
                 Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
                 Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
                 Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 20, 20) }
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 20) }
             };
 
             VerifyCSharpDiagnostic(factory, source, expected);
@@ -750,7 +831,7 @@ using (var connection = new SqlConnection(""<connection string>""))
                 Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
                 Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
                 Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 20, 13) }
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 13) }
             };
 
             VerifyCSharpDiagnostic(factory, source, expected);
@@ -822,7 +903,7 @@ using (var connection = new SqlConnection(""<connection string>""))
                 Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
                 Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
                 Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 20, 13) }
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 13) }
             };
 
             VerifyCSharpDiagnostic(factory, source, expected);

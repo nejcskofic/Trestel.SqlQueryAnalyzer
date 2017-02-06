@@ -61,6 +61,7 @@ namespace TestNamespace
         public const string DapperTemplate = @"
 using Dapper;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Data.SqlClient;
 using Trestel.Database;

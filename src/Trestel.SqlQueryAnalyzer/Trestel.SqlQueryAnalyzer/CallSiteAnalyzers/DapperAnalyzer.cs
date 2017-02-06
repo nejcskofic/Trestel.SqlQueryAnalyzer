@@ -89,20 +89,10 @@ namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
             var paramsType = model.GetTypeInfo(paramsExpressionSyntax).Type;
             if (paramsType == null || paramsType.TypeKind == TypeKind.Error) return;
 
-            if (paramsType.TypeKind == TypeKind.Array)
+            var underlyingType = paramsType.TryGetUnderlyingTypeFromIEnumerableT();
+            if (underlyingType != null)
             {
-                paramsType = ((IArrayTypeSymbol)paramsType).ElementType;
-            }
-            else
-            {
-                var outerNamedParamsType = paramsType as INamedTypeSymbol;
-                if (outerNamedParamsType != null &&
-                    outerNamedParamsType.IsGenericType &&
-                    outerNamedParamsType.TypeArguments.Length == 1 &&
-                    paramsType.AllInterfaces.Any(x => x.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T))
-                {
-                    paramsType = outerNamedParamsType.TypeArguments[0];
-                }
+                paramsType = underlyingType;
             }
 
             var namedParamsType = paramsType as INamedTypeSymbol;
