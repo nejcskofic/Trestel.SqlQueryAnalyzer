@@ -131,6 +131,7 @@
     </Compile>
     <Compile Include="Analyzers\SqlQueryAnalyzer.cs" />
     <Compile Include="Analyzers\SqlQueryAnalyzerDiagnostic.cs" />
+    <Compile Include="CallSiteAnalyzers\BaseCallSiteAnalyzer.cs" />
     <Compile Include="CallSiteAnalyzers\DapperAnalyzer.cs" />
     <Compile Include="CallSiteAnalyzers\GenericAnalyzer.cs" />
     <Compile Include="Common\Result.cs" />
@@ -138,6 +139,7 @@
     <Compile Include="Extensions\TypeExtensions.cs" />
     <Compile Include="Helpers\AsyncHelper.cs" />
     <Compile Include="Infrastructure\CallSiteAnalysis\CallSiteContext.cs" />
+    <Compile Include="Infrastructure\CallSiteAnalysis\CallSiteVerificationContext.cs" />
     <Compile Include="Infrastructure\CallSiteAnalysis\ICallSiteAnalyzer.cs" />
     <Compile Include="Infrastructure\CallSiteAnalysis\NormalizedCallSite.cs" />
     <Compile Include="Infrastructure\CallSiteAnalysis\Parameter.cs" />

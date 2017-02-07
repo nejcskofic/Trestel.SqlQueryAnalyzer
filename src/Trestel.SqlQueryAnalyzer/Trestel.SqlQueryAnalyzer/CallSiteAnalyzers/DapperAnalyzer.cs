@@ -1,13 +1,16 @@
 ﻿// Copyright (c) Nejc Skofic. All rights reserved.
 // Licensed under the MIT license. See LICENSE.txt file in the project root for full license information.
 
-using System.Linq;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Trestel.SqlQueryAnalyzer.Analyzers;
 using Trestel.SqlQueryAnalyzer.Common;
 using Trestel.SqlQueryAnalyzer.Extensions;
 using Trestel.SqlQueryAnalyzer.Infrastructure.CallSiteAnalysis;
+using Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis;
 
 namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
 {
@@ -15,8 +18,10 @@ namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
     /// Analyses call site which is using Dapper extension methods.
     /// </summary>
     /// <seealso cref="ICallSiteAnalyzer" />
-    public class DapperAnalyzer : ICallSiteAnalyzer
+    public class DapperAnalyzer : BaseCallSiteAnalyzer
     {
+        private const string _intrinsicParameterSuffix = "__sqlaintr";
+
         /// <summary>
         /// Determines whether this instance [can analyze call site] the specified context.
         /// </summary>
@@ -24,7 +29,7 @@ namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
         /// <returns>
         ///   <c>true</c> if this instance [can analyze call site] the specified context; otherwise, <c>false</c>.
         /// </returns>
-        public bool CanAnalyzeCallSite(CallSiteContext context)
+        public override bool CanAnalyzeCallSite(CallSiteContext context)
         {
             if (context.CallSiteNode == null) return false;
 
@@ -41,20 +46,81 @@ namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
         /// <returns>
         /// Result of call site normalization
         /// </returns>
-        public Result<NormalizedCallSite> AnalyzeCallSite(CallSiteContext context)
+        public override Result<NormalizedCallSite> AnalyzeCallSite(CallSiteContext context)
         {
             context.CancellationToken.ThrowIfCancellationRequested();
 
             var builder = NormalizedCallSite.New();
             var nodeSymbol = (IMethodSymbol)context.SemanticModel.GetSymbolInfo(context.CallSiteNode).Symbol;
 
-            AnalyzeParameters(context.CallSiteNode, nodeSymbol, context.SemanticModel, builder);
+            AnalyzeParameters(context.CallSiteNode, context.SourceSqlQuery, nodeSymbol, context.SemanticModel, builder);
             bool shouldCheckReturnValue = AnalyzeReturnValue(nodeSymbol, builder);
 
             return Result.Success(builder.Build(true, shouldCheckReturnValue));
         }
 
-        private static void AnalyzeParameters(InvocationExpressionSyntax methodSyntax, IMethodSymbol method, SemanticModel model, NormalizedCallSite.Builder builder)
+        /// <summary>
+        /// Checks the parameter mapping.
+        /// </summary>
+        /// <param name="callSite">The call site.</param>
+        /// <param name="validatedQuery">The validated query.</param>
+        /// <param name="context">The context.</param>
+        protected override void CheckParameterMapping(NormalizedCallSite callSite, ValidatedQuery validatedQuery, CallSiteVerificationContext context)
+        {
+            var unusedParameters = new List<Parameter>(callSite.InputParameters);
+            var missingParameters = new List<ParameterInfo>();
+
+            for (int i = 0; i < validatedQuery.Parameters.Length; i++)
+            {
+                var queryParameter = validatedQuery.Parameters[i];
+
+                // do not process parameters which were added just so that we enforce query structure
+                if (queryParameter.ParameterName.EndsWith(_intrinsicParameterSuffix)) continue;
+
+                bool found = false;
+                for (int j = 0; j < callSite.InputParameters.Length; j++)
+                {
+                    var parameter = callSite.InputParameters[j];
+                    if (queryParameter.ParameterName == parameter.ParameterName)
+                    {
+                        found = true;
+                        unusedParameters.Remove(parameter);
+
+                        var queryParameterType = queryParameter.ParameterType.ConvertFromRuntimeType(context.SemanticModel.Compilation);
+                        var parameterType = parameter.ParameterType;
+                        if (!parameterType.IsBasicType())
+                        {
+                            parameterType = parameterType.TryGetUnderlyingTypeFromIEnumerableT() ?? parameterType;
+                        }
+
+                        if (queryParameterType != null && !parameterType.CanAssign(queryParameterType, context.SemanticModel.Compilation))
+                        {
+                            context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateParameterTypeMismatchDiagnostic(context.CallSiteNode.GetLocation(), queryParameter.ParameterName, queryParameterType, parameterType));
+                        }
+
+                        break;
+                    }
+                }
+
+                if (!found)
+                {
+                    missingParameters.Add(queryParameter);
+                }
+            }
+
+            // report diagnostic
+            if (unusedParameters.Count > 0)
+            {
+                context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateUnusedParameterDiagnostic(context.CallSiteNode.GetLocation(), unusedParameters));
+            }
+
+            if (missingParameters.Count > 0)
+            {
+                context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateMissingParameterDiagnostic(context.CallSiteNode.GetLocation(), missingParameters, context.SemanticModel.Compilation));
+            }
+        }
+
+        private static void AnalyzeParameters(InvocationExpressionSyntax methodSyntax, string sqlQuery, IMethodSymbol method, SemanticModel model, NormalizedCallSite.Builder builder)
         {
             ExpressionSyntax paramsExpressionSyntax = null;
 
@@ -98,6 +164,7 @@ namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
             var namedParamsType = paramsType as INamedTypeSymbol;
             if (namedParamsType == null) return;
 
+            string modifiedQuery = null;
             foreach (var prop in namedParamsType.GetPropertiesWithPublicGetter())
             {
                 var type = prop.Type;
@@ -107,7 +174,28 @@ namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
                     type = model.Compilation.GetSpecialType(SpecialType.System_String);
                 }
 
+                if (!type.IsBasicType() && type.TryGetUnderlyingTypeFromIEnumerableT() != null)
+                {
+                    // we have multiple parameters, expand value
+                    modifiedQuery = Regex.Replace(
+                        modifiedQuery ?? sqlQuery,
+                        GetParameterRegex(prop.Name),
+                        match =>
+                        {
+                            var variableName = match.Groups[1].Value;
+
+                            // cannot reuse same variable since this may break query analysis
+                            return $"({variableName}, {variableName}{_intrinsicParameterSuffix})";
+                        },
+                        RegexOptions.Multiline | RegexOptions.CultureInvariant);
+                }
+
                 builder.WithParameter(prop.Name, type);
+            }
+
+            if (modifiedQuery != null)
+            {
+                builder.WithNormalizedSqlQuery(modifiedQuery);
             }
         }
 
@@ -143,6 +231,11 @@ namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
 
                 return true;
             }
+        }
+
+        private static string GetParameterRegex(string parameterName)
+        {
+            return @"([?@:]" + Regex.Escape(parameterName) + @")(?!\w)";
         }
     }
 }

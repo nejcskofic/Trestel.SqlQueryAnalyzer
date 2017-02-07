@@ -7,6 +7,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Trestel.SqlQueryAnalyzer.Common;
 using Trestel.SqlQueryAnalyzer.Extensions;
 using Trestel.SqlQueryAnalyzer.Infrastructure.CallSiteAnalysis;
+using Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis;
 
 namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
 {
@@ -14,7 +15,7 @@ namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
     /// Default call site analyzer which performs conservative resulting object check and does not enable parameter checks.
     /// </summary>
     /// <seealso cref="Trestel.SqlQueryAnalyzer.Infrastructure.CallSiteAnalysis.ICallSiteAnalyzer" />
-    public class GenericAnalyzer : ICallSiteAnalyzer
+    public class GenericAnalyzer : BaseCallSiteAnalyzer
     {
         /// <summary>
         /// Determines whether this instance can analyze call site given the specified context.
@@ -23,7 +24,7 @@ namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
         /// <returns>
         ///   <c>true</c> if this instance can analyze call site; otherwise, <c>false</c>.
         /// </returns>
-        public bool CanAnalyzeCallSite(CallSiteContext context)
+        public override bool CanAnalyzeCallSite(CallSiteContext context)
         {
             return true;
         }
@@ -35,7 +36,7 @@ namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
         /// <returns>
         /// Result of call site normalization
         /// </returns>
-        public Result<NormalizedCallSite> AnalyzeCallSite(CallSiteContext context)
+        public override Result<NormalizedCallSite> AnalyzeCallSite(CallSiteContext context)
         {
             // TODO: error handling in syntax
             var methodSymbol = context.SemanticModel.GetSymbolInfo(context.CallSiteNode).Symbol as IMethodSymbol;
@@ -108,6 +109,18 @@ namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
 
                 return Result.Success(builder.Build(false, true));
             }
+        }
+
+        /// <summary>
+        /// Checks the parameter mapping.
+        /// NOOP: this analyzer does not know how to deal with parameters
+        /// </summary>
+        /// <param name="callSite">The call site.</param>
+        /// <param name="validatedQuery">The validated query.</param>
+        /// <param name="context">The context.</param>
+        protected override void CheckParameterMapping(NormalizedCallSite callSite, ValidatedQuery validatedQuery, CallSiteVerificationContext context)
+        {
+            // NOOP: this analyzer does not know how to deal with parameters
         }
     }
 }

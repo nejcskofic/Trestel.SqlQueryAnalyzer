@@ -129,6 +129,9 @@
     <Compile Include="Templates\SourceCodeTemplates.cs" />
     <Compile Include="Tests\CachingServiceUsage.cs" />
     <Compile Include="Tests\DapperSpecificCallSiteAnalysis.cs" />
+    <Compile Include="Tests\DapperSpecificCallSiteAnalysis.SupportedFunctions.cs">
+      <DependentUpon>DapperSpecificCallSiteAnalysis.cs</DependentUpon>
+    </Compile>
     <Compile Include="Tests\DatabaseHintAttributeUsage.cs" />
     <Compile Include="Tests\MemoryCacheUsage.cs" />
     <Compile Include="Tests\NonSpecificCallSiteAnalysis.cs" />

@@ -111,10 +111,11 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
             // perform local analyis
             var methodNode = GetParentCallSiteSyntax(node);
             Result<NormalizedCallSite> callSiteAnalysisResult = Result<NormalizedCallSite>.Empty;
+            ICallSiteAnalyzer callSiteAnalyzer = null;
             if (methodNode != null)
             {
-                var callSiteContext = new CallSiteContext(methodNode, context.SemanticModel, context.CancellationToken);
-                var callSiteAnalyzer = _serviceFactory.GetCallSiteAnalyzer(callSiteContext);
+                var callSiteContext = new CallSiteContext(methodNode, rawSqlString, context.SemanticModel, context.CancellationToken);
+                callSiteAnalyzer = _serviceFactory.GetCallSiteAnalyzer(callSiteContext);
                 if (callSiteAnalyzer != null)
                 {
                     callSiteAnalysisResult = callSiteAnalyzer.AnalyzeCallSite(callSiteContext);
@@ -160,15 +161,8 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
 
             if (callSiteAnalysisResult.IsSuccess)
             {
-                if (callSiteAnalysisResult.SuccessfulResult.CheckParameters)
-                {
-                    CheckParameterMapping(callSiteAnalysisResult.SuccessfulResult, result.SuccessfulResult, methodNode, context);
-                }
-
-                if (callSiteAnalysisResult.SuccessfulResult.CheckResult)
-                {
-                    CheckResultMapping(callSiteAnalysisResult.SuccessfulResult, result.SuccessfulResult, methodNode, context);
-                }
+                var verificationContext = new CallSiteVerificationContext(methodNode, context.SemanticModel, context.ReportDiagnostic);
+                callSiteAnalyzer.VerifyCallSite(callSiteAnalysisResult.SuccessfulResult, result.SuccessfulResult, verificationContext);
             }
         }
 
@@ -216,115 +210,6 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
 
             var result = await provider.ValidateAsync(rawSqlString, cancellationToken);
             return result;
-        }
-
-        private static void CheckParameterMapping(NormalizedCallSite callSite, ValidatedQuery validatedQuery, InvocationExpressionSyntax targetNode, SyntaxNodeAnalysisContext context)
-        {
-            var unusedParameters = new List<Parameter>(callSite.InputParameters);
-            var missingParameters = new List<ParameterInfo>();
-
-            for (int i = 0; i < validatedQuery.Parameters.Length; i++)
-            {
-                var queryParameter = validatedQuery.Parameters[i];
-                bool found = false;
-                for (int j = 0; j < callSite.InputParameters.Length; j++)
-                {
-                    var parameter = callSite.InputParameters[j];
-                    if (queryParameter.ParameterName == parameter.ParameterName)
-                    {
-                        found = true;
-                        unusedParameters.Remove(parameter);
-
-                        var queryParameterType = queryParameter.ParameterType.ConvertFromRuntimeType(context.SemanticModel.Compilation);
-                        if (queryParameterType != null && !parameter.ParameterType.CanAssign(queryParameterType, context.SemanticModel.Compilation))
-                        {
-                            context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateParameterTypeMismatchDiagnostic(targetNode.GetLocation(), queryParameter.ParameterName, queryParameterType, parameter.ParameterType));
-                        }
-
-                        break;
-                    }
-                }
-
-                if (!found)
-                {
-                    missingParameters.Add(queryParameter);
-                }
-            }
-
-            // report diagnostic
-            if (unusedParameters.Count > 0)
-            {
-                context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateUnusedParameterDiagnostic(targetNode.GetLocation(), unusedParameters));
-            }
-
-            if (missingParameters.Count > 0)
-            {
-                context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateMissingParameterDiagnostic(targetNode.GetLocation(), missingParameters, context.SemanticModel.Compilation));
-            }
-        }
-
-        private static void CheckResultMapping(NormalizedCallSite callSite, ValidatedQuery validatedQuery, InvocationExpressionSyntax targetNode, SyntaxNodeAnalysisContext context)
-        {
-            // special case if we are directly mapping to primitive type
-            if (callSite.ExpectedFields.Length == 1 && callSite.ExpectedFields[0].IsAnonymous)
-            {
-                var fieldType = callSite.ExpectedFields[0].FieldType;
-                if (validatedQuery.OutputColumns.Length != 1)
-                {
-                    context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateExpectedSingleColumnInQueryResultDiagnostic(targetNode.GetLocation(), fieldType));
-                    return;
-                }
-
-                var columnType = validatedQuery.OutputColumns[0].Type.ConvertFromRuntimeType(context.SemanticModel.Compilation);
-                if (columnType != null && !columnType.CanAssign(fieldType, context.SemanticModel.Compilation))
-                {
-                    context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateTypeMismatchDiagnostic(targetNode.GetLocation(), columnType, fieldType));
-                }
-
-                return;
-            }
-
-            var unusedColumns = new List<ColumnInfo>(validatedQuery.OutputColumns);
-            var unusedFields = new List<ResultField>();
-
-            for (int i = 0; i < callSite.ExpectedFields.Length; i++)
-            {
-                var field = callSite.ExpectedFields[i];
-                bool found = false;
-                for (int j = 0; j < validatedQuery.OutputColumns.Length; j++)
-                {
-                    var column = validatedQuery.OutputColumns[j];
-                    if (field.FieldName == column.Name)
-                    {
-                        found = true;
-                        unusedColumns.Remove(column);
-
-                        var columnType = column.Type.ConvertFromRuntimeType(context.SemanticModel.Compilation);
-                        if (columnType != null && !columnType.CanAssign(field.FieldType, context.SemanticModel.Compilation))
-                        {
-                            context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreatePropertyTypeMismatchDiagnostic(targetNode.GetLocation(), column.Name, columnType, field.FieldType));
-                        }
-
-                        break;
-                    }
-                }
-
-                if (!found)
-                {
-                    unusedFields.Add(field);
-                }
-            }
-
-            // report diagnostic
-            if (unusedFields.Count > 0)
-            {
-                context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateMissingColumnsInQueryResultDiagnostic(targetNode.GetLocation(), unusedFields));
-            }
-
-            if (unusedColumns.Count > 0)
-            {
-                context.ReportDiagnostic(SqlQueryAnalyzerDiagnostic.CreateUnusedColumnsInQueryResultDiagnostic(targetNode.GetLocation(), unusedColumns));
-            }
         }
 
         private static InvocationExpressionSyntax GetParentCallSiteSyntax(SyntaxNode node)

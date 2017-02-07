@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE.txt file in the project root for full license information.
 
 using Trestel.SqlQueryAnalyzer.Common;
+using Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis;
 
 namespace Trestel.SqlQueryAnalyzer.Infrastructure.CallSiteAnalysis
 {
@@ -25,5 +26,13 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.CallSiteAnalysis
         /// <param name="context">The context.</param>
         /// <returns>Result of call site normalization</returns>
         Result<NormalizedCallSite> AnalyzeCallSite(CallSiteContext context);
+
+        /// <summary>
+        /// Verifies the call site.
+        /// </summary>
+        /// <param name="callSiteData">The call site data.</param>
+        /// <param name="queryData">The query data.</param>
+        /// <param name="context">The context.</param>
+        void VerifyCallSite(NormalizedCallSite callSiteData, ValidatedQuery queryData, CallSiteVerificationContext context);
     }
 }

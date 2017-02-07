@@ -19,7 +19,7 @@ using Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis;
 namespace Tests
 {
     [TestFixture]
-    public class DapperSpecificCallSiteAnalysis : SqlQueryDiagnosticVerifier
+    public partial class DapperSpecificCallSiteAnalysis : SqlQueryDiagnosticVerifier
     {
         [Test]
         public void ValidateSingleParameter()
@@ -339,48 +339,13 @@ public class Person
         }
 
         [Test]
-        public void ValidateExecuteAsync()
+        public void ValidateListParameter()
         {
-            var query = "DELETE FROM Person.Person WHERE BusinessEntityID = @p1";
+            var query = "DELETE FROM Person.Person WHERE BusinessEntityID IN @p1";
             var mainMethod = $@"
 using (var connection = new SqlConnection(""<connection string>""))
 {{
-    await connection.ExecuteAsync(Sql.From(""{query}""));
-}}
-";
-
-            var source = SourceCodeTemplates.GetSourceCodeFromDapperTemplate(mainMethod, isAsync: true);
-
-            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
-            mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
-                        .AddParameter("p1", typeof(int?)).Build())));
-
-            var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
-                .RegisterCallSiteAnalyzerInstance(new DapperAnalyzer())
-                .Build();
-
-            var expected = new DiagnosticResult
-            {
-                Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
-                Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
-                Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 26, 11) }
-            };
-
-            VerifyCSharpDiagnostic(factory, source, expected);
-        }
-
-        [Test]
-        public void ValidateExecuteReader()
-        {
-            var query = "DELETE FROM Person.Person WHERE BusinessEntityID = @p1";
-            var mainMethod = $@"
-using (var connection = new SqlConnection(""<connection string>""))
-{{
-    using (var reader = connection.ExecuteReader(Sql.From(""{query}"")));
+    connection.Execute(Sql.From(""{query}""), new {{ p1 = new[] {{ 1, 2 }} }});
 }}
 ";
 
@@ -388,70 +353,31 @@ using (var connection = new SqlConnection(""<connection string>""))
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
-                        .AddParameter("p1", typeof(int?)).Build())));
-
-            var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
-                .RegisterCallSiteAnalyzerInstance(new DapperAnalyzer())
-                .Build();
-
-            var expected = new DiagnosticResult
-            {
-                Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
-                Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
-                Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 25) }
-            };
-
-            VerifyCSharpDiagnostic(factory, source, expected);
-        }
-
-        [Test]
-        public void ValidateExecuteReaderAsync()
-        {
-            var query = "DELETE FROM Person.Person WHERE BusinessEntityID = @p1";
-            var mainMethod = $@"
-using (var connection = new SqlConnection(""<connection string>""))
-{{
-    using (var reader = await connection.ExecuteReaderAsync(Sql.From(""{query}"")));
-}}
-";
-
-            var source = SourceCodeTemplates.GetSourceCodeFromDapperTemplate(mainMethod, isAsync: true);
-
-            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+                .Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(Result.Failure<ValidatedQuery>("Invalid query.")));
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync("DELETE FROM Person.Person WHERE BusinessEntityID IN (@p1, @p1__sqlaintr)", It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
-                        .AddParameter("p1", typeof(int?)).Build())));
+                    .AddParameter("p1", typeof(int?))
+                    .AddParameter("p1__sqlaintr", typeof(int?)).Build())));
 
             var factory = ServiceFactory.New()
                 .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
                 .RegisterCallSiteAnalyzerInstance(new DapperAnalyzer())
                 .Build();
 
-            var expected = new DiagnosticResult
-            {
-                Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
-                Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
-                Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 26, 31) }
-            };
-
-            VerifyCSharpDiagnostic(factory, source, expected);
+            VerifyCSharpDiagnostic(factory, source);
         }
 
+        // TODO provide actual diagnostic
         [Test]
-        public void ValidateExecuteScalar()
+        public void ValidateMissmatchedListParameter()
         {
-            var query = "SELECT FirstName FROM Person.Person WHERE BusinessEntityID = @p1";
+            var query = "DELETE FROM Person.Person WHERE BusinessEntityID IN @p1";
             var mainMethod = $@"
 using (var connection = new SqlConnection(""<connection string>""))
 {{
-    var r = connection.ExecuteScalar(Sql.From(""{query}""));
-    Console.WriteLine(r);
+    connection.Execute(Sql.From(""{query}""), new {{ p1 = new[] {{ ""first"", ""second"" }} }});
 }}
 ";
 
@@ -459,45 +385,13 @@ using (var connection = new SqlConnection(""<connection string>""))
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
-                    .AddParameter("p1", typeof(int?)).Build())));
-
-            var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
-                .RegisterCallSiteAnalyzerInstance(new DapperAnalyzer())
-                .Build();
-
-            var expected = new DiagnosticResult
-            {
-                Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
-                Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
-                Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 13) }
-            };
-
-            VerifyCSharpDiagnostic(factory, source, expected);
-        }
-
-        [Test]
-        public void ValidateExecuteScalarAsync()
-        {
-            var query = "SELECT FirstName FROM Person.Person WHERE BusinessEntityID = @p1";
-            var mainMethod = $@"
-using (var connection = new SqlConnection(""<connection string>""))
-{{
-    var r = await connection.ExecuteScalarAsync(Sql.From(""{query}""));
-    Console.WriteLine(r);
-}}
-";
-
-            var source = SourceCodeTemplates.GetSourceCodeFromDapperTemplate(mainMethod, isAsync: true);
-
-            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
+                .Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(Result.Failure<ValidatedQuery>("Invalid query.")));
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync("DELETE FROM Person.Person WHERE BusinessEntityID IN (@p1, @p1__sqlaintr)", It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
-                    .AddParameter("p1", typeof(int?)).Build())));
+                    .AddParameter("p1", typeof(int?))
+                    .AddParameter("p1__sqlaintr", typeof(int?)).Build())));
 
             var factory = ServiceFactory.New()
                 .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
@@ -506,440 +400,10 @@ using (var connection = new SqlConnection(""<connection string>""))
 
             var expected = new DiagnosticResult
             {
-                Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
-                Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
+                Id = SqlQueryAnalyzerDiagnostic.ParameterTypeMismatchDiagnosticId,
+                Message = "For parameter 'p1' expected type 'int?', but found type 'string'.",
                 Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 26, 19) }
-            };
-
-            VerifyCSharpDiagnostic(factory, source, expected);
-        }
-
-        [Test]
-        public void ValidateQuery()
-        {
-            var query = "SELECT FirstName FROM Person.Person WHERE BusinessEntityID = @p1";
-            var mainMethod = $@"
-using (var connection = new SqlConnection(""<connection string>""))
-{{
-    var r = connection.Query(Sql.From(""{query}"")).FirstOrDefault();
-    Console.WriteLine(r);
-}}
-";
-
-            var source = SourceCodeTemplates.GetSourceCodeFromDapperTemplate(mainMethod);
-
-            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
-            mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
-                    .AddParameter("p1", typeof(int?)).Build())));
-
-            var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
-                .RegisterCallSiteAnalyzerInstance(new DapperAnalyzer())
-                .Build();
-
-            var expected = new DiagnosticResult
-            {
-                Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
-                Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
-                Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 13) }
-            };
-
-            VerifyCSharpDiagnostic(factory, source, expected);
-        }
-
-        [Test]
-        public void ValidateQueryAsync()
-        {
-            var query = "SELECT FirstName FROM Person.Person WHERE BusinessEntityID = @p1";
-            var mainMethod = $@"
-using (var connection = new SqlConnection(""<connection string>""))
-{{
-    var r = (await connection.QueryAsync(Sql.From(""{query}""))).FirstOrDefault();
-    Console.WriteLine(r);
-}}
-";
-
-            var source = SourceCodeTemplates.GetSourceCodeFromDapperTemplate(mainMethod, isAsync: true);
-
-            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
-            mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
-                    .AddParameter("p1", typeof(int?)).Build())));
-
-            var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
-                .RegisterCallSiteAnalyzerInstance(new DapperAnalyzer())
-                .Build();
-
-            var expected = new DiagnosticResult
-            {
-                Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
-                Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
-                Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 26, 20) }
-            };
-
-            VerifyCSharpDiagnostic(factory, source, expected);
-        }
-
-        [Test]
-        public void ValidateQueryFirst()
-        {
-            var query = "SELECT FirstName FROM Person.Person WHERE BusinessEntityID = @p1";
-            var mainMethod = $@"
-using (var connection = new SqlConnection(""<connection string>""))
-{{
-    var r = connection.QueryFirst(Sql.From(""{query}""));
-    Console.WriteLine(r);
-}}
-";
-
-            var source = SourceCodeTemplates.GetSourceCodeFromDapperTemplate(mainMethod);
-
-            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
-            mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
-                    .AddParameter("p1", typeof(int?)).Build())));
-
-            var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
-                .RegisterCallSiteAnalyzerInstance(new DapperAnalyzer())
-                .Build();
-
-            var expected = new DiagnosticResult
-            {
-                Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
-                Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
-                Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 13) }
-            };
-
-            VerifyCSharpDiagnostic(factory, source, expected);
-        }
-
-        [Test]
-        public void ValidateQueryFirstAsync()
-        {
-            var query = "SELECT FirstName FROM Person.Person WHERE BusinessEntityID = @p1";
-            var mainMethod = $@"
-using (var connection = new SqlConnection(""<connection string>""))
-{{
-    var r = await connection.QueryFirstAsync(typeof(string), Sql.From(""{query}""));
-    Console.WriteLine(r);
-}}
-";
-
-            var source = SourceCodeTemplates.GetSourceCodeFromDapperTemplate(mainMethod, isAsync: true);
-
-            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
-            mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
-                    .AddParameter("p1", typeof(int?)).Build())));
-
-            var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
-                .RegisterCallSiteAnalyzerInstance(new DapperAnalyzer())
-                .Build();
-
-            var expected = new DiagnosticResult
-            {
-                Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
-                Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
-                Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 26, 19) }
-            };
-
-            VerifyCSharpDiagnostic(factory, source, expected);
-        }
-
-        [Test]
-        public void ValidateQueryFirstOrDefault()
-        {
-            var query = "SELECT FirstName FROM Person.Person WHERE BusinessEntityID = @p1";
-            var mainMethod = $@"
-using (var connection = new SqlConnection(""<connection string>""))
-{{
-    var r = connection.QueryFirstOrDefault(Sql.From(""{query}""));
-    Console.WriteLine(r);
-}}
-";
-
-            var source = SourceCodeTemplates.GetSourceCodeFromDapperTemplate(mainMethod);
-
-            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
-            mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
-                    .AddParameter("p1", typeof(int?)).Build())));
-
-            var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
-                .RegisterCallSiteAnalyzerInstance(new DapperAnalyzer())
-                .Build();
-
-            var expected = new DiagnosticResult
-            {
-                Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
-                Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
-                Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 13) }
-            };
-
-            VerifyCSharpDiagnostic(factory, source, expected);
-        }
-
-        [Test]
-        public void ValidateQueryFirstOrDefaultAsync()
-        {
-            var query = "SELECT FirstName FROM Person.Person WHERE BusinessEntityID = @p1";
-            var mainMethod = $@"
-using (var connection = new SqlConnection(""<connection string>""))
-{{
-    var r = await connection.QueryFirstOrDefaultAsync(typeof(string), Sql.From(""{query}""));
-    Console.WriteLine(r);
-}}
-";
-
-            var source = SourceCodeTemplates.GetSourceCodeFromDapperTemplate(mainMethod, isAsync: true);
-
-            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
-            mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
-                    .AddParameter("p1", typeof(int?)).Build())));
-
-            var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
-                .RegisterCallSiteAnalyzerInstance(new DapperAnalyzer())
-                .Build();
-
-            var expected = new DiagnosticResult
-            {
-                Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
-                Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
-                Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 26, 19) }
-            };
-
-            VerifyCSharpDiagnostic(factory, source, expected);
-        }
-
-        [Test]
-        public void ValidateQueryMultiple()
-        {
-            var query = "SELECT FirstName FROM Person.Person WHERE BusinessEntityID = @p1";
-            var mainMethod = $@"
-using (var connection = new SqlConnection(""<connection string>""))
-{{
-    using (var r = connection.QueryMultiple(Sql.From(""{query}"")));
-}}
-";
-
-            var source = SourceCodeTemplates.GetSourceCodeFromDapperTemplate(mainMethod);
-
-            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
-            mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
-                    .AddParameter("p1", typeof(int?)).Build())));
-
-            var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
-                .RegisterCallSiteAnalyzerInstance(new DapperAnalyzer())
-                .Build();
-
-            var expected = new DiagnosticResult
-            {
-                Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
-                Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
-                Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 20) }
-            };
-
-            VerifyCSharpDiagnostic(factory, source, expected);
-        }
-
-        [Test]
-        public void ValidateQueryMultipleAsync()
-        {
-            var query = "SELECT FirstName FROM Person.Person WHERE BusinessEntityID = @p1";
-            var mainMethod = $@"
-using (var connection = new SqlConnection(""<connection string>""))
-{{
-    using (var r = await connection.QueryMultipleAsync(Sql.From(""{query}"")));
-}}
-";
-
-            var source = SourceCodeTemplates.GetSourceCodeFromDapperTemplate(mainMethod, isAsync: true);
-
-            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
-            mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
-                    .AddParameter("p1", typeof(int?)).Build())));
-
-            var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
-                .RegisterCallSiteAnalyzerInstance(new DapperAnalyzer())
-                .Build();
-
-            var expected = new DiagnosticResult
-            {
-                Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
-                Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
-                Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 26, 26) }
-            };
-
-            VerifyCSharpDiagnostic(factory, source, expected);
-        }
-
-        [Test]
-        public void ValidateQuerySingle()
-        {
-            var query = "SELECT FirstName FROM Person.Person WHERE BusinessEntityID = @p1";
-            var mainMethod = $@"
-using (var connection = new SqlConnection(""<connection string>""))
-{{
-    var r = connection.QuerySingle(Sql.From(""{query}""));
-    Console.WriteLine(r);
-}}
-";
-
-            var source = SourceCodeTemplates.GetSourceCodeFromDapperTemplate(mainMethod);
-
-            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
-            mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
-                    .AddParameter("p1", typeof(int?)).Build())));
-
-            var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
-                .RegisterCallSiteAnalyzerInstance(new DapperAnalyzer())
-                .Build();
-
-            var expected = new DiagnosticResult
-            {
-                Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
-                Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
-                Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 13) }
-            };
-
-            VerifyCSharpDiagnostic(factory, source, expected);
-        }
-
-        [Test]
-        public void ValidateQuerySingleAsync()
-        {
-            var query = "SELECT FirstName FROM Person.Person WHERE BusinessEntityID = @p1";
-            var mainMethod = $@"
-using (var connection = new SqlConnection(""<connection string>""))
-{{
-    var r = await connection.QuerySingleAsync(typeof(string), Sql.From(""{query}""));
-    Console.WriteLine(r);
-}}
-";
-
-            var source = SourceCodeTemplates.GetSourceCodeFromDapperTemplate(mainMethod, isAsync: true);
-
-            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
-            mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
-                    .AddParameter("p1", typeof(int?)).Build())));
-
-            var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
-                .RegisterCallSiteAnalyzerInstance(new DapperAnalyzer())
-                .Build();
-
-            var expected = new DiagnosticResult
-            {
-                Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
-                Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
-                Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 26, 19) }
-            };
-
-            VerifyCSharpDiagnostic(factory, source, expected);
-        }
-
-        [Test]
-        public void ValidateQuerSingleOrDefault()
-        {
-            var query = "SELECT FirstName FROM Person.Person WHERE BusinessEntityID = @p1";
-            var mainMethod = $@"
-using (var connection = new SqlConnection(""<connection string>""))
-{{
-    var r = connection.QuerySingleOrDefault(Sql.From(""{query}""));
-    Console.WriteLine(r);
-}}
-";
-
-            var source = SourceCodeTemplates.GetSourceCodeFromDapperTemplate(mainMethod);
-
-            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
-            mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
-                    .AddParameter("p1", typeof(int?)).Build())));
-
-            var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
-                .RegisterCallSiteAnalyzerInstance(new DapperAnalyzer())
-                .Build();
-
-            var expected = new DiagnosticResult
-            {
-                Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
-                Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
-                Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 13) }
-            };
-
-            VerifyCSharpDiagnostic(factory, source, expected);
-        }
-
-        [Test]
-        public void ValidateQuerySingleOrDefaultAsync()
-        {
-            var query = "SELECT FirstName FROM Person.Person WHERE BusinessEntityID = @p1";
-            var mainMethod = $@"
-using (var connection = new SqlConnection(""<connection string>""))
-{{
-    var r = await connection.QuerySingleOrDefaultAsync(typeof(string), Sql.From(""{query}""));
-    Console.WriteLine(r);
-}}
-";
-
-            var source = SourceCodeTemplates.GetSourceCodeFromDapperTemplate(mainMethod, isAsync: true);
-
-            var mockupValidationProvider = new Mock<IQueryValidationProvider>();
-            mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
-                    .AddParameter("p1", typeof(int?)).Build())));
-
-            var factory = ServiceFactory.New()
-                .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
-                .RegisterCallSiteAnalyzerInstance(new DapperAnalyzer())
-                .Build();
-
-            var expected = new DiagnosticResult
-            {
-                Id = SqlQueryAnalyzerDiagnostic.MissingParameterDiagnosticId,
-                Message = "Following parameters were expected by query but were not found:" + Environment.NewLine + "p1 (int?)",
-                Severity = DiagnosticSeverity.Error,
-                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 26, 19) }
+                Locations = new[] { new DiagnosticResultLocation("Test0.cs", 21, 5) }
             };
 
             VerifyCSharpDiagnostic(factory, source, expected);

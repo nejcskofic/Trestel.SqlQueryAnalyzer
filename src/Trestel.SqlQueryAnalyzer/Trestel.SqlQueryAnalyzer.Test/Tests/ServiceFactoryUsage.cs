@@ -61,7 +61,7 @@ namespace Tests
         public void NoCallSiteAnalyzer()
         {
             var factory = ServiceFactory.New().Build();
-            var context = new CallSiteContext(null, null, default(CancellationToken));
+            var context = new CallSiteContext(null, null, null, default(CancellationToken));
 
             var analyzer = factory.GetCallSiteAnalyzer(context);
 
@@ -77,7 +77,7 @@ namespace Tests
                 .New()
                 .RegisterCallSiteAnalyzerInstance(mockAnalyzer.Object)
                 .Build();
-            var context = new CallSiteContext(null, null, default(CancellationToken));
+            var context = new CallSiteContext(null, null, null, default(CancellationToken));
 
             var analyzer = factory.GetCallSiteAnalyzer(context);
 
@@ -93,7 +93,7 @@ namespace Tests
                 .New()
                 .RegisterCallSiteAnalyzerInstance(mockAnalyzer.Object)
                 .Build();
-            var context = new CallSiteContext(null, null, default(CancellationToken));
+            var context = new CallSiteContext(null, null, null, default(CancellationToken));
 
             var analyzer = factory.GetCallSiteAnalyzer(context);
 
@@ -113,7 +113,7 @@ namespace Tests
                 .RegisterCallSiteAnalyzerInstance(falseMockAnalyzer.Object)
                 .RegisterCallSiteAnalyzerInstance(trueAnalyzer)
                 .Build();
-            var context = new CallSiteContext(null, null, default(CancellationToken));
+            var context = new CallSiteContext(null, null, null, default(CancellationToken));
 
             var analyzer = factory.GetCallSiteAnalyzer(context);
 
