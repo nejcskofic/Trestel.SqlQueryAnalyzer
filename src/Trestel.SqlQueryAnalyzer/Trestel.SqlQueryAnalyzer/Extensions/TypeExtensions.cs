@@ -87,24 +87,37 @@ namespace Trestel.SqlQueryAnalyzer.Extensions
         }
 
         /// <summary>
-        /// If type symbol derives from <see cref="IEnumerable{T}"/> and type T is bound, return bound type T.
+        /// If type symbol derives from <see cref="IEnumerable{T}" /> and type T is bound, return bound type T.
         /// </summary>
         /// <param name="type">The type.</param>
-        /// <returns>Containing type from <see cref="IEnumerable{T}"/></returns>
-        public static ITypeSymbol TryGetUnderlyingTypeFromIEnumerableT(this ITypeSymbol type)
+        /// <param name="ignoreArrays">if set to <c>true</c> arrays should not be considered.</param>
+        /// <returns>
+        /// Containing type from <see cref="IEnumerable{T}" />
+        /// </returns>
+        public static ITypeSymbol TryGetUnderlyingTypeFromIEnumerableT(this ITypeSymbol type, bool ignoreArrays = false)
         {
             if (type == null) return null;
 
             if (type.TypeKind == TypeKind.Array)
             {
-                return ((IArrayTypeSymbol)type).ElementType;
+                return ignoreArrays ? null : ((IArrayTypeSymbol)type).ElementType;
             }
 
+            // check if type is actually IEnumerable<T>
+            INamedTypeSymbol f = null;
+            if ((f = type as INamedTypeSymbol) != null &&
+                f.IsGenericType &&
+                f.ConstructedFrom != null &&
+                f.ConstructedFrom.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T)
+            {
+                return f.TypeArguments[0];
+            }
+
+            // check if type implements IEnumerable<T>
             for (int i = 0; i < type.AllInterfaces.Length; i++)
             {
-                var f = type.AllInterfaces[i];
+                f = type.AllInterfaces[i];
                 if (f.IsGenericType &&
-                    f.TypeParameters.Length == 1 &&
                     f.ConstructedFrom != null &&
                     f.ConstructedFrom.SpecialType == SpecialType.System_Collections_Generic_IEnumerable_T)
                 {

@@ -55,7 +55,7 @@ namespace TestNamespace
             VerifyCSharpDiagnostic(factory, source);
 
             // this should never be called if Sql.From is not direct argument to consuming function
-            mockupCallSiteAnalyzer.Verify(x => x.AnalyzeCallSite(It.IsAny<CallSiteContext>()), Times.Never);
+            mockupCallSiteAnalyzer.Verify(x => x.NormalizeQueryDefinition(It.IsAny<CallSiteContext>()), Times.Never);
         }
 
         [Test]
@@ -102,7 +102,7 @@ namespace TestNamespace
             VerifyCSharpDiagnostic(factory, source, expected);
 
             // this should never be called if Sql.From is not direct argument to consuming function
-            mockupCallSiteAnalyzer.Verify(x => x.AnalyzeCallSite(It.IsAny<CallSiteContext>()), Times.Never);
+            mockupCallSiteAnalyzer.Verify(x => x.NormalizeQueryDefinition(It.IsAny<CallSiteContext>()), Times.Never);
         }
     }
 }

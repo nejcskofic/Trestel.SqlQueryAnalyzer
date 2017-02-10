@@ -113,7 +113,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
             // perform local analysis
             var methodNode = GetParentCallSiteSyntax(node);
             IMethodSymbol methodNodeSymbol = null;
-            Result<NormalizedCallSite> callSiteAnalysisResult = Result<NormalizedCallSite>.Empty;
+            Result<NormalizedQueryDefinition> callSiteAnalysisResult = Result<NormalizedQueryDefinition>.Empty;
             ICallSiteAnalyzer callSiteAnalyzer = null;
             if (methodNode != null && (methodNodeSymbol = context.SemanticModel.GetSymbolInfo(methodNode).Symbol as IMethodSymbol) != null)
             {
@@ -121,7 +121,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
                 callSiteAnalyzer = _serviceFactory.GetCallSiteAnalyzer(callSiteContext);
                 if (callSiteAnalyzer != null)
                 {
-                    callSiteAnalysisResult = callSiteAnalyzer.AnalyzeCallSite(callSiteContext);
+                    callSiteAnalysisResult = callSiteAnalyzer.NormalizeQueryDefinition(callSiteContext);
                     if (!callSiteAnalysisResult.IsSuccess)
                     {
                         // TODO: if failure, report failure diagnostic and abort
@@ -167,7 +167,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
             if (callSiteAnalysisResult.IsSuccess)
             {
                 var verificationContext = new CallSiteVerificationContext(methodNode, methodNodeSymbol, context.SemanticModel, context.ReportDiagnostic);
-                callSiteAnalyzer.VerifyCallSite(callSiteAnalysisResult.SuccessfulResult, result.SuccessfulResult, verificationContext);
+                callSiteAnalyzer.AnalyzeCallSite(callSiteAnalysisResult.SuccessfulResult, result.SuccessfulResult, verificationContext);
             }
         }
 

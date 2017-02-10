@@ -21,11 +21,11 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.CallSiteAnalysis
         bool CanAnalyzeCallSite(CallSiteContext context);
 
         /// <summary>
-        /// Analyzes the call site.
+        /// Normalizes query definition.
         /// </summary>
         /// <param name="context">The context.</param>
         /// <returns>Result of call site normalization</returns>
-        Result<NormalizedCallSite> AnalyzeCallSite(CallSiteContext context);
+        Result<NormalizedQueryDefinition> NormalizeQueryDefinition(CallSiteContext context);
 
         /// <summary>
         /// Verifies the call site.
@@ -33,6 +33,6 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.CallSiteAnalysis
         /// <param name="callSiteData">The call site data.</param>
         /// <param name="queryData">The query data.</param>
         /// <param name="context">The context.</param>
-        void VerifyCallSite(NormalizedCallSite callSiteData, ValidatedQuery queryData, CallSiteVerificationContext context);
+        void AnalyzeCallSite(NormalizedQueryDefinition callSiteData, ValidatedQuery queryData, CallSiteVerificationContext context);
     }
 }

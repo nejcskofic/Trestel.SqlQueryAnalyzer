@@ -18,7 +18,7 @@ namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
     /// Analyses call site which is using Dapper extension methods.
     /// </summary>
     /// <seealso cref="ICallSiteAnalyzer" />
-    public class DapperAnalyzer : BaseCallSiteAnalyzer
+    public class DapperAnalyzer : GenericAnalyzer
     {
         private const string _intrinsicParameterSuffix = "__sqlaintr";
 
@@ -43,13 +43,11 @@ namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
         /// <returns>
         /// Result of call site normalization
         /// </returns>
-        public override Result<NormalizedCallSite> AnalyzeCallSite(CallSiteContext context)
+        public override Result<NormalizedQueryDefinition> NormalizeQueryDefinition(CallSiteContext context)
         {
-            var builder = NormalizedCallSite.New();
+            var builder = NormalizedQueryDefinition.New();
             AnalyzeParameters(context.CallSiteNode, context.SourceSqlQuery, context.CallSiteMethodSymbol, context.SemanticModel, builder);
-            bool shouldCheckReturnValue = AnalyzeReturnValue(context.CallSiteMethodSymbol, builder);
-
-            return Result.Success(builder.Build(true, shouldCheckReturnValue));
+            return Result.Success(builder.Build(true));
         }
 
         /// <summary>
@@ -58,7 +56,7 @@ namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
         /// <param name="callSite">The call site.</param>
         /// <param name="validatedQuery">The validated query.</param>
         /// <param name="context">The context.</param>
-        protected override void CheckParameterMapping(NormalizedCallSite callSite, ValidatedQuery validatedQuery, CallSiteVerificationContext context)
+        protected override void CheckParameterMapping(NormalizedQueryDefinition callSite, ValidatedQuery validatedQuery, CallSiteVerificationContext context)
         {
             var unusedParameters = new List<Parameter>(callSite.InputParameters);
             var missingParameters = new List<ParameterInfo>();
@@ -113,7 +111,28 @@ namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
             }
         }
 
-        private static void AnalyzeParameters(InvocationExpressionSyntax methodSyntax, string sqlQuery, IMethodSymbol method, SemanticModel model, NormalizedCallSite.Builder builder)
+        /// <summary>
+        /// Extracts the expected type of the result from method signature.
+        /// </summary>
+        /// <param name="methodSymbol">The method symbol.</param>
+        /// <returns>
+        /// Type symbol if successful, otherwise null.
+        /// </returns>
+        protected override ITypeSymbol ExtractExpectedResultType(IMethodSymbol methodSymbol)
+        {
+            // since we know Dapper API simplify checks to only generic methods and extract type directly
+            if (!methodSymbol.IsGenericMethod) return null;
+
+            // TODO: support mutlimapping
+            if (methodSymbol.TypeArguments.Length != 1) return null;
+
+            var returnType = methodSymbol.TypeArguments[0];
+            if (returnType.TypeKind == TypeKind.Error) return null;
+
+            return returnType;
+        }
+
+        private static void AnalyzeParameters(InvocationExpressionSyntax methodSyntax, string sqlQuery, IMethodSymbol method, SemanticModel model, NormalizedQueryDefinition.Builder builder)
         {
             ExpressionSyntax paramsExpressionSyntax = null;
 
@@ -189,40 +208,6 @@ namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
             if (modifiedQuery != null)
             {
                 builder.WithNormalizedSqlQuery(modifiedQuery);
-            }
-        }
-
-        private static bool AnalyzeReturnValue(IMethodSymbol method, NormalizedCallSite.Builder builder)
-        {
-            // Currently non generic method are not supported.
-            // We could only report return type as object/dynamic and raise diagnostic.
-            if (!method.IsGenericMethod) return false;
-
-            // TODO: support mutlimapping
-            if (method.TypeArguments.Length != 1) return false;
-
-            var returnType = method.TypeArguments[0];
-            if (returnType.TypeKind == TypeKind.Error) return false;
-
-            if (returnType.IsBasicType())
-            {
-                builder.WithSingleAnonymousExpectedField(returnType);
-                return true;
-            }
-            else
-            {
-                var namedResultType = returnType as INamedTypeSymbol;
-                if (namedResultType == null)
-                {
-                    return false;
-                }
-
-                foreach (var prop in namedResultType.GetPropertiesWithPublicSetter())
-                {
-                    builder.WithExpectedField(prop.Name, prop.Type, namedResultType);
-                }
-
-                return true;
             }
         }
 

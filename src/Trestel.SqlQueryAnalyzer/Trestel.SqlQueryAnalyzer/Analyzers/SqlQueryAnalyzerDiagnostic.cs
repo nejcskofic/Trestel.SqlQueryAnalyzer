@@ -267,7 +267,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
         /// <param name="location">The location.</param>
         /// <param name="missingColumns">The missing columns.</param>
         /// <returns>Missing columns in query result diagnostic</returns>
-        internal static Diagnostic CreateMissingColumnsInQueryResultDiagnostic(Location location, IList<ResultField> missingColumns)
+        internal static Diagnostic CreateMissingColumnsInQueryResultDiagnostic(Location location, IList<IPropertySymbol> missingColumns)
         {
             string columnsText;
             if (missingColumns == null)
@@ -280,9 +280,9 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
                 for (int i = 0; i < missingColumns.Count; i++)
                 {
                     builder.AppendLine();
-                    builder.Append(missingColumns[i].FieldName);
+                    builder.Append(missingColumns[i].Name);
                     builder.Append(" (");
-                    builder.Append(missingColumns[i].FieldType.ToDisplayString());
+                    builder.Append(missingColumns[i].Type.ToDisplayString());
                     builder.Append(")");
                 }
 
