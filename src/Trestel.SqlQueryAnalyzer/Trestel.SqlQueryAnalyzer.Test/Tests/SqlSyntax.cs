@@ -53,7 +53,7 @@ Console.WriteLine(sql);
             var source = SourceCodeTemplates.GetSourceCodeFromSimpleTemplate(mainMethod);
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
-            mockupValidationProvider.Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>())).Returns(Task.FromResult(Result.Success(ValidatedQuery.New().Build())));
+            mockupValidationProvider.Setup(x => x.ValidateAsync(query, It.IsAny<bool>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Result.Success(ValidatedQuery.New().Build())));
 
             var factory = ServiceFactory.New()
                 .RegisterQueryValidationProviderFactory(DatabaseType.SqlServer, (connection) => mockupValidationProvider.Object)
@@ -62,7 +62,7 @@ Console.WriteLine(sql);
             VerifyCSharpDiagnostic(factory, source);
 
             // verify that validation provider was called
-            mockupValidationProvider.Verify(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()), Times.Once, "Provider should be called for specific query.");
+            mockupValidationProvider.Verify(x => x.ValidateAsync(query, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once, "Provider should be called for specific query.");
         }
 
         [Test]
@@ -77,7 +77,7 @@ Console.WriteLine(sql);
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync(query, It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Failure<ValidatedQuery>("Incorrect syntax near the keyword 'FROM'.")));
 
             var factory = ServiceFactory.New()
@@ -94,7 +94,7 @@ Console.WriteLine(sql);
 
             VerifyCSharpDiagnostic(factory, source, expected);
 
-            mockupValidationProvider.Verify(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()), Times.Once, "Provider should be called for specific query.");
+            mockupValidationProvider.Verify(x => x.ValidateAsync(query, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Once, "Provider should be called for specific query.");
         }
     }
 }

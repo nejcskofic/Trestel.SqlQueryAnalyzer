@@ -45,7 +45,7 @@ namespace TestNamespace
 ";
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
-            mockupValidationProvider.Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Result.Success(ValidatedQuery.New().Build())));
+            mockupValidationProvider.Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Result.Success(ValidatedQuery.New().Build())));
             var mockupFactory = new Mock<Func<string, IQueryValidationProvider>>();
             mockupFactory.Setup(x => x("Data Source=3")).Returns(mockupValidationProvider.Object);
 
@@ -83,7 +83,7 @@ namespace TestNamespace
 }
 ";
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
-            mockupValidationProvider.Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Result.Success(ValidatedQuery.New().Build())));
+            mockupValidationProvider.Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Result.Success(ValidatedQuery.New().Build())));
             var mockupFactory = new Mock<Func<string, IQueryValidationProvider>>();
             mockupFactory.Setup(x => x("Data Source=2")).Returns(mockupValidationProvider.Object);
 
@@ -120,7 +120,7 @@ namespace TestNamespace
 }
 ";
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
-            mockupValidationProvider.Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Result.Success(ValidatedQuery.New().Build())));
+            mockupValidationProvider.Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Result.Success(ValidatedQuery.New().Build())));
             var mockupFactory = new Mock<Func<string, IQueryValidationProvider>>();
             mockupFactory.Setup(x => x("Data Source=1")).Returns(mockupValidationProvider.Object);
 
@@ -155,7 +155,7 @@ namespace TestNamespace
 }
 ";
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
-            mockupValidationProvider.Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Result.Success(ValidatedQuery.New().Build())));
+            mockupValidationProvider.Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Result.Success(ValidatedQuery.New().Build())));
             var mockupFactory = new Mock<Func<string, IQueryValidationProvider>>();
             mockupFactory.Setup(x => x(It.IsAny<string>())).Returns(mockupValidationProvider.Object);
 
@@ -199,7 +199,7 @@ namespace TestNamespace
 }
 ";
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
-            mockupValidationProvider.Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Result.Success(ValidatedQuery.New().Build())));
+            mockupValidationProvider.Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Result.Success(ValidatedQuery.New().Build())));
             var mockupFactory = new Mock<Func<string, IQueryValidationProvider>>();
             mockupFactory.Setup(x => x("Data Source=3")).Returns(mockupValidationProvider.Object);
 

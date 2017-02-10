@@ -36,7 +36,7 @@ using (var connection = new SqlConnection(""<connection string>""))
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync(query, true, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                         .AddParameter("p1", typeof(int?)).Build())));
 
@@ -63,7 +63,7 @@ using (var connection = new SqlConnection(""<connection string>""))
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync(query, true, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                         .AddParameter("p1", typeof(string)).Build())));
 
@@ -90,7 +90,7 @@ using (var connection = new SqlConnection(""<connection string>""))
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync(query, true, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                         .AddParameter("p1", typeof(int?)).Build())));
 
@@ -125,7 +125,7 @@ using (var connection = new SqlConnection(""<connection string>""))
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync(query, true, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                         .AddParameter("p1", typeof(int?))
                         .AddParameter("p2", typeof(bool?)).Build())));
@@ -161,7 +161,7 @@ using (var connection = new SqlConnection(""<connection string>""))
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync(query, true, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New().Build())));
 
             var factory = ServiceFactory.New()
@@ -195,7 +195,7 @@ using (var connection = new SqlConnection(""<connection string>""))
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync(query, true, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                     .AddParameter("p1", typeof(int?)).Build())));
 
@@ -237,7 +237,7 @@ using (var connection = new SqlConnection(""<connection string>""))
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync(query, true, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                     .AddParameter("p1", typeof(int?)).Build())));
 
@@ -272,7 +272,7 @@ using (var connection = new SqlConnection(""<connection string>""))
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync(query, true, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                     .AddParameter("p1", typeof(int?))
                     .AddParameter("p2", typeof(string))
@@ -316,7 +316,7 @@ public class Person
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync(query, true, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                     .AddParameter("BusinessEntityID", typeof(int?))
                     .AddParameter("FirstName", typeof(string))
@@ -353,10 +353,10 @@ using (var connection = new SqlConnection(""<connection string>""))
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Failure<ValidatedQuery>("Invalid query.")));
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync("DELETE FROM Person.Person WHERE BusinessEntityID IN (@p1, @p1__sqlaintr)", It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync("DELETE FROM Person.Person WHERE BusinessEntityID IN (@p1, @p1__sqlaintr)", true, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                     .AddParameter("p1", typeof(int?))
                     .AddParameter("p1__sqlaintr", typeof(int?)).Build())));
@@ -385,10 +385,10 @@ using (var connection = new SqlConnection(""<connection string>""))
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Failure<ValidatedQuery>("Invalid query.")));
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync("DELETE FROM Person.Person WHERE BusinessEntityID IN (@p1, @p1__sqlaintr)", It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync("DELETE FROM Person.Person WHERE BusinessEntityID IN (@p1, @p1__sqlaintr)", true, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                     .AddParameter("p1", typeof(int?))
                     .AddParameter("p1__sqlaintr", typeof(int?)).Build())));

@@ -43,7 +43,7 @@ Console.WriteLine(query.FirstOrDefault());
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync(query, false, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                         .AddOutputColumn("BusinessEntityID", typeof(int))
                         .AddOutputColumn("Title", typeof(string))
@@ -80,7 +80,7 @@ Console.WriteLine(query.FirstOrDefault());
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync(query, false, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                         .AddOutputColumn("BusinessEntityID", typeof(int))
                         .AddOutputColumn("Title", typeof(string))
@@ -126,7 +126,7 @@ Console.WriteLine(query.FirstOrDefault());
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync(query, false, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                         .AddOutputColumn("BusinessEntityID", typeof(int))
                         .AddOutputColumn("Title", typeof(string))
@@ -171,7 +171,7 @@ Console.WriteLine(query.FirstOrDefault());
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync(query, false, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                         .AddOutputColumn("BusinessEntityID", typeof(int))
                         .AddOutputColumn("Title", typeof(string))
@@ -217,7 +217,7 @@ Console.WriteLine(query.FirstOrDefault());
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync(query, false, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                         .AddOutputColumn("BusinessEntityID", typeof(int))
                         .AddOutputColumn("Title", typeof(string))
@@ -245,7 +245,7 @@ Console.WriteLine(query.FirstOrDefault());
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync(query, false, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                         .AddOutputColumn("rowguid", typeof(Guid)).Build())));
 
@@ -269,7 +269,7 @@ Console.WriteLine(query.FirstOrDefault());
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync(query, false, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                         .AddOutputColumn("rowguid", typeof(Guid?)).Build())));
 
@@ -293,7 +293,7 @@ Console.WriteLine(query.FirstOrDefault());
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync(query, false, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                         .AddOutputColumn("RecordVersion", typeof(byte[])).Build())));
 
@@ -317,7 +317,7 @@ Console.WriteLine(query.FirstOrDefault());
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync(query, false, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                         .AddOutputColumn("RecordVersion", typeof(byte[])).Build())));
 
@@ -349,7 +349,7 @@ Console.WriteLine(query.FirstOrDefault());
 
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
             mockupValidationProvider
-                .Setup(x => x.ValidateAsync(query, It.IsAny<CancellationToken>()))
+                .Setup(x => x.ValidateAsync(query, false, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Success(ValidatedQuery.New()
                         .AddOutputColumn("rowguid", typeof(Guid)).Build())));
 

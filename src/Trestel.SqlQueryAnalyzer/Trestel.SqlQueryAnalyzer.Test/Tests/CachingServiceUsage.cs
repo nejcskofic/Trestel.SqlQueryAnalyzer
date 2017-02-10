@@ -20,8 +20,8 @@ namespace Tests.Tests
             var service = new CachingService();
             var connectionData = new ConnectionStringData("<test>", DatabaseType.SqlServer);
 
-            var result = service.GetOrAddValidationResult(connectionData, "<query>", () => Result.Failure<ValidatedQuery>("error1"));
-            Assert.AreEqual(result, service.GetOrAddValidationResult(connectionData, "<query>", () => Result.Failure<ValidatedQuery>("error2")));
+            var result = service.GetOrAddValidationResult(connectionData, "<query>", false, (p1, p2, p3) => Result.Failure<ValidatedQuery>("error1"));
+            Assert.AreEqual(result, service.GetOrAddValidationResult(connectionData, "<query>", false, (p1, p2, p3) => Result.Failure<ValidatedQuery>("error2")));
         }
 
         [Test]
@@ -30,8 +30,8 @@ namespace Tests.Tests
             var service = new CachingService();
             var connectionData = new ConnectionStringData("<test>", DatabaseType.SqlServer);
 
-            var result = await service.GetOrAddValidationResultAsync(connectionData, "<query>", () => Task.FromResult(Result.Failure<ValidatedQuery>("error1")));
-            Assert.AreEqual(result, await service.GetOrAddValidationResultAsync(connectionData, "<query>", () => Task.FromResult(Result.Failure<ValidatedQuery>("error2"))));
+            var result = await service.GetOrAddValidationResultAsync(connectionData, "<query>", false, (p1, p2, p3) => Task.FromResult(Result.Failure<ValidatedQuery>("error1")));
+            Assert.AreEqual(result, await service.GetOrAddValidationResultAsync(connectionData, "<query>", false, (p1, p2, p3) => Task.FromResult(Result.Failure<ValidatedQuery>("error2"))));
         }
     }
 }

@@ -41,9 +41,9 @@ namespace Trestel.SqlQueryAnalyzer.Providers.SqlServer
 
         /// <summary>
         /// Gets a value indicating whether throttling should be enabled. If static validation provider performs any lengthy operation
-        /// (such as direct query to database), you should enable throttling which will delay call to <see cref="ValidateAsync(string, CancellationToken)" />.
+        /// (such as direct query to database), you should enable throttling which will delay call to <see cref="ValidateAsync(string, bool, CancellationToken)" />.
         /// While user is typing, query analyzer tasks may get cancelled before expensive calls will be performed in
-        /// <see cref="ValidateAsync(string, CancellationToken)" />.
+        /// <see cref="ValidateAsync(string, bool, CancellationToken)" />.
         /// </summary>
         /// <value>
         ///   <c>true</c> if throttling is enabeld; otherwise, <c>false</c>.
@@ -60,12 +60,13 @@ namespace Trestel.SqlQueryAnalyzer.Providers.SqlServer
         /// Validates the specified raw SQL query.
         /// </summary>
         /// <param name="rawSqlQuery">The raw SQL query.</param>
+        /// <param name="analyzeParameterInfo">if set to <c>true</c> parameter info should be supplied.</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>
         /// Validation result of provided raw query along with expected input parameters and returning result set.
         /// </returns>
         /// <exception cref="System.ArgumentException">Argument null or empty. - rawSqlQuery</exception>
-        public async Task<Result<ValidatedQuery>> ValidateAsync(string rawSqlQuery, CancellationToken cancellationToken)
+        public async Task<Result<ValidatedQuery>> ValidateAsync(string rawSqlQuery, bool analyzeParameterInfo, CancellationToken cancellationToken)
         {
             if (String.IsNullOrEmpty(rawSqlQuery)) throw new ArgumentException("Argument null or empty.", nameof(rawSqlQuery));
 
@@ -80,7 +81,7 @@ namespace Trestel.SqlQueryAnalyzer.Providers.SqlServer
                 hasErrors = await ValidateQueryAndDescribeResultSetAsync(connection, rawSqlQuery, builder, errors, cancellationToken);
 
                 // if there are no errors check what parameters are expected
-                if (!hasErrors)
+                if (!hasErrors && analyzeParameterInfo)
                 {
                     await DescribeExpectedParametersAsync(connection, rawSqlQuery, builder, cancellationToken);
                 }

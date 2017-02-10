@@ -43,7 +43,7 @@ namespace TestNamespace
     }
 }";
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
-            mockupValidationProvider.Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Result.Success(ValidatedQuery.New().Build())));
+            mockupValidationProvider.Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>())).Returns(Task.FromResult(Result.Success(ValidatedQuery.New().Build())));
             var mockupCallSiteAnalyzer = new Mock<ICallSiteAnalyzer>();
             mockupCallSiteAnalyzer.Setup(x => x.CanAnalyzeCallSite(It.IsAny<CallSiteContext>())).Returns(false);
 
@@ -81,7 +81,7 @@ namespace TestNamespace
     }
 }";
             var mockupValidationProvider = new Mock<IQueryValidationProvider>();
-            mockupValidationProvider.Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            mockupValidationProvider.Setup(x => x.ValidateAsync(It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(Result.Failure<ValidatedQuery>("Incorrect syntax near the keyword 'FROM'.")));
             var mockupCallSiteAnalyzer = new Mock<ICallSiteAnalyzer>();
             mockupCallSiteAnalyzer.Setup(x => x.CanAnalyzeCallSite(It.IsAny<CallSiteContext>())).Returns(false);

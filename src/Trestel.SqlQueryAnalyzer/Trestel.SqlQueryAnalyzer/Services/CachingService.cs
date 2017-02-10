@@ -32,11 +32,14 @@ namespace Trestel.SqlQueryAnalyzer.Services
         /// </summary>
         /// <param name="connectionData">The connection data.</param>
         /// <param name="rawQuery">The raw query.</param>
+        /// <param name="analyzeParameterInfo">if set to <c>true</c> [analyze parameter information].</param>
         /// <param name="function">The function.</param>
-        /// <returns>Cached validation result or one constructed from function.</returns>
-        public Result<ValidatedQuery> GetOrAddValidationResult(ConnectionStringData connectionData, string rawQuery, Func<Result<ValidatedQuery>> function)
+        /// <returns>
+        /// Cached validation result or one constructed from function.
+        /// </returns>
+        public Result<ValidatedQuery> GetOrAddValidationResult(ConnectionStringData connectionData, string rawQuery, bool analyzeParameterInfo, Func<ConnectionStringData, string, bool, Result<ValidatedQuery>> function)
         {
-            var key = ConstructKey(connectionData, rawQuery);
+            var key = ConstructKey(connectionData, rawQuery, analyzeParameterInfo);
 
             lock (_validationResultCache)
             {
@@ -44,7 +47,7 @@ namespace Trestel.SqlQueryAnalyzer.Services
                 if (result != Result<ValidatedQuery>.Empty) return result;
             }
 
-            var newResult = function();
+            var newResult = function(connectionData, rawQuery, analyzeParameterInfo);
             if (newResult != Result<ValidatedQuery>.Empty)
             {
                 lock (_validationResultCache)
@@ -61,11 +64,14 @@ namespace Trestel.SqlQueryAnalyzer.Services
         /// </summary>
         /// <param name="connectionData">The connection data.</param>
         /// <param name="rawQuery">The raw query.</param>
+        /// <param name="analyzeParameterInfo">if set to <c>true</c> [analyze parameter information].</param>
         /// <param name="function">The function.</param>
-        /// <returns>Cached validation result or one constructed from function.</returns>
-        public async Task<Result<ValidatedQuery>> GetOrAddValidationResultAsync(ConnectionStringData connectionData, string rawQuery, Func<Task<Result<ValidatedQuery>>> function)
+        /// <returns>
+        /// Cached validation result or one constructed from function.
+        /// </returns>
+        public async Task<Result<ValidatedQuery>> GetOrAddValidationResultAsync(ConnectionStringData connectionData, string rawQuery, bool analyzeParameterInfo, Func<ConnectionStringData, string, bool, Task<Result<ValidatedQuery>>> function)
         {
-            var key = ConstructKey(connectionData, rawQuery);
+            var key = ConstructKey(connectionData, rawQuery, analyzeParameterInfo);
 
             lock (_validationResultCache)
             {
@@ -73,7 +79,7 @@ namespace Trestel.SqlQueryAnalyzer.Services
                 if (result != Result<ValidatedQuery>.Empty) return result;
             }
 
-            var newResult = await function();
+            var newResult = await function(connectionData, rawQuery, analyzeParameterInfo);
             if (newResult != Result<ValidatedQuery>.Empty)
             {
                 lock (_validationResultCache)
@@ -106,10 +112,10 @@ namespace Trestel.SqlQueryAnalyzer.Services
             }
         }
 
-        private static string ConstructKey(ConnectionStringData connectionData, string rawQuery)
+        private static string ConstructKey(ConnectionStringData connectionData, string rawQuery, bool analyzeParameterInfo)
         {
             int hash = connectionData.GetHashCode();
-            return hash.ToString("X") + ":" + (rawQuery ?? "");
+            return hash.ToString("X") + ":" + (rawQuery ?? "") + (analyzeParameterInfo ? ":1" : ":0");
         }
 
         private static string ConstructKey(SyntaxNode node)

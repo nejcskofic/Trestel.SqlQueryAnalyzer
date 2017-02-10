@@ -143,7 +143,8 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
                 result = await _cachingService.GetOrAddValidationResultAsync(
                     connectionData,
                     rawSqlString,
-                    () => ValidateSqlStringAsync(rawSqlString, connectionData, argumentExpression, context.CancellationToken));
+                    callSiteAnalysisResult.IsSuccess ? callSiteAnalysisResult.SuccessfulResult.CheckParameters : false,
+                    (connection, sql, analyzeParameterInfo) => ValidateSqlStringAsync(connection, sql, analyzeParameterInfo, argumentExpression, context.CancellationToken));
             }
             catch (OperationCanceledException)
             {
@@ -196,7 +197,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
             return true;
         }
 
-        private async Task<Result<ValidatedQuery>> ValidateSqlStringAsync(string rawSqlString, ConnectionStringData connectionData, LiteralExpressionSyntax target, CancellationToken cancellationToken)
+        private async Task<Result<ValidatedQuery>> ValidateSqlStringAsync(ConnectionStringData connectionData, string rawSqlString, bool analyzeParameterInfo, LiteralExpressionSyntax target, CancellationToken cancellationToken)
         {
             // check if processing was canceled
             cancellationToken.ThrowIfCancellationRequested();
@@ -213,7 +214,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
                 cancellationToken.ThrowIfCancellationRequested();
             }
 
-            var result = await provider.ValidateAsync(rawSqlString, cancellationToken);
+            var result = await provider.ValidateAsync(rawSqlString, analyzeParameterInfo, cancellationToken);
             return result;
         }
 
