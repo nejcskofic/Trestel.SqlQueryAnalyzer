@@ -12,10 +12,10 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis
     /// </summary>
     public sealed class ValidatedQuery
     {
-        private ValidatedQuery(ImmutableArray<ParameterInfo> parameters, ImmutableArray<ColumnInfo> outputColumns)
+        private ValidatedQuery(IEnumerable<ParameterInfo> parameters, IEnumerable<ColumnInfo> outputColumns)
         {
-            Parameters = parameters;
-            OutputColumns = outputColumns;
+            Parameters = ImmutableArray.CreateRange(parameters);
+            OutputColumns = ImmutableArray.CreateRange(outputColumns);
         }
 
         /// <summary>
@@ -100,7 +100,7 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.QueryAnalysis
             /// <returns>Immutable <see cref="ValidatedQuery"/></returns>
             public ValidatedQuery Build()
             {
-                return new ValidatedQuery(ImmutableArray.CreateRange(_parameters), ImmutableArray.CreateRange(_outputColumns));
+                return new ValidatedQuery(_parameters, _outputColumns);
             }
         }
     }

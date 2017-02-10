@@ -13,12 +13,12 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.CallSiteAnalysis
     /// </summary>
     public sealed class NormalizedCallSite
     {
-        private NormalizedCallSite(bool checkParameters, bool checkResult, ImmutableArray<Parameter> parameters, ImmutableArray<ResultField> fields, string normalizedSqlQuery)
+        private NormalizedCallSite(bool checkParameters, bool checkResult, IEnumerable<Parameter> parameters, IEnumerable<ResultField> fields, string normalizedSqlQuery)
         {
             CheckParameters = checkParameters;
             CheckResult = checkResult;
-            InputParameters = parameters;
-            ExpectedFields = fields;
+            InputParameters = ImmutableArray.CreateRange(parameters);
+            ExpectedFields = ImmutableArray.CreateRange(fields);
             NormalizedSqlQuery = normalizedSqlQuery;
         }
 
@@ -182,8 +182,8 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.CallSiteAnalysis
                 return new NormalizedCallSite(
                     checkParameters,
                     checkResult,
-                    ImmutableArray.CreateRange(_parameters),
-                    ImmutableArray.CreateRange(_fields),
+                    _parameters,
+                    _fields,
                     _normalizedSqlQuery);
             }
         }

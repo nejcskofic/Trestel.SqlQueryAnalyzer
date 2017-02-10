@@ -39,13 +39,7 @@ namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
         public override Result<NormalizedCallSite> AnalyzeCallSite(CallSiteContext context)
         {
             // TODO: error handling in syntax
-            var methodSymbol = context.SemanticModel.GetSymbolInfo(context.CallSiteNode).Symbol as IMethodSymbol;
-            if (methodSymbol == null)
-            {
-                // try if method is locally declared
-                methodSymbol = context.SemanticModel.GetDeclaredSymbol(context.CallSiteNode) as IMethodSymbol;
-            }
-
+            var methodSymbol = context.CallSiteMethodSymbol;
             if (methodSymbol == null)
             {
                 return Result.Success(NormalizedCallSite.New().Build(false, false));

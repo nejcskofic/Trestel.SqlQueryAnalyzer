@@ -108,13 +108,16 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
                 return;
             }
 
-            // perform local analyis
+            context.CancellationToken.ThrowIfCancellationRequested();
+
+            // perform local analysis
             var methodNode = GetParentCallSiteSyntax(node);
+            IMethodSymbol methodNodeSymbol = null;
             Result<NormalizedCallSite> callSiteAnalysisResult = Result<NormalizedCallSite>.Empty;
             ICallSiteAnalyzer callSiteAnalyzer = null;
-            if (methodNode != null)
+            if (methodNode != null && (methodNodeSymbol = context.SemanticModel.GetSymbolInfo(methodNode).Symbol as IMethodSymbol) != null)
             {
-                var callSiteContext = new CallSiteContext(methodNode, rawSqlString, context.SemanticModel, context.CancellationToken);
+                var callSiteContext = new CallSiteContext(methodNode, methodNodeSymbol, rawSqlString, context.SemanticModel);
                 callSiteAnalyzer = _serviceFactory.GetCallSiteAnalyzer(callSiteContext);
                 if (callSiteAnalyzer != null)
                 {
@@ -131,6 +134,8 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
                     }
                 }
             }
+
+            context.CancellationToken.ThrowIfCancellationRequested();
 
             Result<ValidatedQuery> result;
             try
@@ -161,7 +166,7 @@ namespace Trestel.SqlQueryAnalyzer.Analyzers
 
             if (callSiteAnalysisResult.IsSuccess)
             {
-                var verificationContext = new CallSiteVerificationContext(methodNode, context.SemanticModel, context.ReportDiagnostic);
+                var verificationContext = new CallSiteVerificationContext(methodNode, methodNodeSymbol, context.SemanticModel, context.ReportDiagnostic);
                 callSiteAnalyzer.VerifyCallSite(callSiteAnalysisResult.SuccessfulResult, result.SuccessfulResult, verificationContext);
             }
         }

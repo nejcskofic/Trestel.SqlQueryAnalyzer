@@ -18,11 +18,13 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.CallSiteAnalysis
         /// Initializes a new instance of the <see cref="CallSiteVerificationContext" /> class.
         /// </summary>
         /// <param name="node">The node.</param>
+        /// <param name="symbol">The symbol.</param>
         /// <param name="model">The model.</param>
         /// <param name="reportAction">The report action.</param>
-        public CallSiteVerificationContext(InvocationExpressionSyntax node, SemanticModel model, Action<Diagnostic> reportAction)
+        public CallSiteVerificationContext(InvocationExpressionSyntax node, IMethodSymbol symbol, SemanticModel model, Action<Diagnostic> reportAction)
         {
             CallSiteNode = node;
+            CallSiteMethodSymbol = symbol;
             SemanticModel = model;
             _reportAction = reportAction;
         }
@@ -34,6 +36,14 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.CallSiteAnalysis
         /// The call site node.
         /// </value>
         public InvocationExpressionSyntax CallSiteNode { get; }
+
+        /// <summary>
+        /// Gets the call site method symbol.
+        /// </summary>
+        /// <value>
+        /// The call site method symbol.
+        /// </value>
+        public IMethodSymbol CallSiteMethodSymbol { get; }
 
         /// <summary>
         /// Gets the semantic model.

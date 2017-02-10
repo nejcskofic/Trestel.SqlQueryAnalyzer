@@ -16,15 +16,15 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.CallSiteAnalysis
         /// Initializes a new instance of the <see cref="CallSiteContext" /> class.
         /// </summary>
         /// <param name="node">The node.</param>
+        /// <param name="symbol">The symbol.</param>
         /// <param name="sqlQuery">The SQL query.</param>
         /// <param name="semanticModel">The semantic model.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        public CallSiteContext(InvocationExpressionSyntax node, string sqlQuery, SemanticModel semanticModel, CancellationToken cancellationToken)
+        public CallSiteContext(InvocationExpressionSyntax node, IMethodSymbol symbol, string sqlQuery, SemanticModel semanticModel)
         {
             CallSiteNode = node;
+            CallSiteMethodSymbol = symbol;
             SourceSqlQuery = sqlQuery;
             SemanticModel = semanticModel;
-            CancellationToken = cancellationToken;
         }
 
         /// <summary>
@@ -34,6 +34,14 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.CallSiteAnalysis
         /// The call site node.
         /// </value>
         public InvocationExpressionSyntax CallSiteNode { get; }
+
+        /// <summary>
+        /// Gets the call site method symbol.
+        /// </summary>
+        /// <value>
+        /// The call site method symbol.
+        /// </value>
+        public IMethodSymbol CallSiteMethodSymbol { get; }
 
         /// <summary>
         /// Gets the source SQL query.
@@ -50,13 +58,5 @@ namespace Trestel.SqlQueryAnalyzer.Infrastructure.CallSiteAnalysis
         /// The semantic model.
         /// </value>
         public SemanticModel SemanticModel { get; }
-
-        /// <summary>
-        /// Gets the cancellation token.
-        /// </summary>
-        /// <value>
-        /// The cancellation token.
-        /// </value>
-        public CancellationToken CancellationToken { get; }
     }
 }

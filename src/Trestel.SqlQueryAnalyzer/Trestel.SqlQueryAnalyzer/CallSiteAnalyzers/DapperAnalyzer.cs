@@ -31,12 +31,9 @@ namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
         /// </returns>
         public override bool CanAnalyzeCallSite(CallSiteContext context)
         {
-            if (context.CallSiteNode == null) return false;
+            if (context.CallSiteMethodSymbol == null) return false;
 
-            var nodeSymbol = context.SemanticModel.GetSymbolInfo(context.CallSiteNode).Symbol as IMethodSymbol;
-            if (nodeSymbol == null) return false;
-
-            return nodeSymbol.ContainingNamespace.Name == "Dapper";
+            return context.CallSiteMethodSymbol.ContainingNamespace.Name == "Dapper";
         }
 
         /// <summary>
@@ -48,13 +45,9 @@ namespace Trestel.SqlQueryAnalyzer.CallSiteAnalyzers
         /// </returns>
         public override Result<NormalizedCallSite> AnalyzeCallSite(CallSiteContext context)
         {
-            context.CancellationToken.ThrowIfCancellationRequested();
-
             var builder = NormalizedCallSite.New();
-            var nodeSymbol = (IMethodSymbol)context.SemanticModel.GetSymbolInfo(context.CallSiteNode).Symbol;
-
-            AnalyzeParameters(context.CallSiteNode, context.SourceSqlQuery, nodeSymbol, context.SemanticModel, builder);
-            bool shouldCheckReturnValue = AnalyzeReturnValue(nodeSymbol, builder);
+            AnalyzeParameters(context.CallSiteNode, context.SourceSqlQuery, context.CallSiteMethodSymbol, context.SemanticModel, builder);
+            bool shouldCheckReturnValue = AnalyzeReturnValue(context.CallSiteMethodSymbol, builder);
 
             return Result.Success(builder.Build(true, shouldCheckReturnValue));
         }

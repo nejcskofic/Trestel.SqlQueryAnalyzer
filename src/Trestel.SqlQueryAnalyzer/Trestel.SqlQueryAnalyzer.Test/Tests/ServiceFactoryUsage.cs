@@ -2,10 +2,8 @@
 // Licensed under the MIT license. See LICENSE.txt file in the project root for full license information.
 
 using System;
-using System.Threading;
 using Moq;
 using NUnit.Framework;
-using TestHelper;
 using Trestel.SqlQueryAnalyzer.Design;
 using Trestel.SqlQueryAnalyzer.Infrastructure;
 using Trestel.SqlQueryAnalyzer.Infrastructure.CallSiteAnalysis;
@@ -61,7 +59,7 @@ namespace Tests
         public void NoCallSiteAnalyzer()
         {
             var factory = ServiceFactory.New().Build();
-            var context = new CallSiteContext(null, null, null, default(CancellationToken));
+            var context = new CallSiteContext(null, null, null, null);
 
             var analyzer = factory.GetCallSiteAnalyzer(context);
 
@@ -77,7 +75,7 @@ namespace Tests
                 .New()
                 .RegisterCallSiteAnalyzerInstance(mockAnalyzer.Object)
                 .Build();
-            var context = new CallSiteContext(null, null, null, default(CancellationToken));
+            var context = new CallSiteContext(null, null, null, null);
 
             var analyzer = factory.GetCallSiteAnalyzer(context);
 
@@ -93,7 +91,7 @@ namespace Tests
                 .New()
                 .RegisterCallSiteAnalyzerInstance(mockAnalyzer.Object)
                 .Build();
-            var context = new CallSiteContext(null, null, null, default(CancellationToken));
+            var context = new CallSiteContext(null, null, null, null);
 
             var analyzer = factory.GetCallSiteAnalyzer(context);
 
@@ -113,7 +111,7 @@ namespace Tests
                 .RegisterCallSiteAnalyzerInstance(falseMockAnalyzer.Object)
                 .RegisterCallSiteAnalyzerInstance(trueAnalyzer)
                 .Build();
-            var context = new CallSiteContext(null, null, null, default(CancellationToken));
+            var context = new CallSiteContext(null, null, null, null);
 
             var analyzer = factory.GetCallSiteAnalyzer(context);
 
